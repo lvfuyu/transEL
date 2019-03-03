@@ -93,10 +93,10 @@ ENV/
 
 # Others Customed
 #.gitignore
-sync.sh
-testmodel/
+#sync.sh
+#testmodel/
 .DS_Store
-*.tar.gz
+#*.tar.gz
 
 #log
 *_log
