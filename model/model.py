@@ -391,7 +391,7 @@ class Model(BaseModel):
         self.loss = self.loss_mask * self.loss
         self.loss = tf.reduce_sum(self.loss)
         # for tensorboard
-        tf.summary.scalar("loss", self.loss)
+        # tf.summary.scalar("loss", self.loss)
 
     def build(self):
         self.add_placeholders()
