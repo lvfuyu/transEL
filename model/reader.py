@@ -3,6 +3,7 @@ import argparse
 import model.config as config
 import pickle
 
+
 def parse_sequence_example(serialized):
     sequence_features={
             "words": tf.FixedLenSequenceFeature([], dtype=tf.int64),   # in order to have a vector. if i put [1] it will probably
@@ -92,9 +93,8 @@ def test_input_pipeline(filenames, args):
     dataset = dataset.padded_batch(args.batch_size, dataset.output_shapes)
     return dataset
 
+
 if __name__ == "__main__":
     count_records_of_one_epoch(["/home/master_thesis_share/data/tfrecords/"
                                "wikiRLTD_perparagr_wthr_6_cthr_201/"
                                "train/wikidumpRLTD.txt"])
-
-

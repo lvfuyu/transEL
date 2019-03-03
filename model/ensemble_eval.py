@@ -9,6 +9,7 @@ from evaluation.metrics import Evaluator, metrics_calculation_and_prediction_pri
 import model.reader as reader
 from model.util import load_train_args
 
+
 def validation_loss_calculation(filename, opt_thr, el_mode):
     if args.predictions_folder is not None:
         printPredictions.process_file(el_mode, filename, opt_thr)

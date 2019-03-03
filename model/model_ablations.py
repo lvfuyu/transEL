@@ -6,6 +6,7 @@ import model.config as config
 from .base_model import BaseModel
 import model.util as util
 
+
 class Model(BaseModel):
 
     def __init__(self, args, next_element):

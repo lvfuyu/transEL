@@ -9,6 +9,7 @@ import pickle
 import numpy as np
 from model.util import load_train_args
 
+
 def create_training_pipelines(args):
     folder = "../data/tfrecords/" + args.experiment_name + \
              ("/allspans/" if args.all_spans_training else "/gmonly/")
@@ -506,4 +507,3 @@ if __name__ == "__main__":
         train()
     except KeyboardInterrupt:
         terminate()
-        
