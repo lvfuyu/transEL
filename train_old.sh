@@ -3,7 +3,7 @@ do
 python3 -m model.train  \
 			                     --batch_size=4   --experiment_name=corefmerge \
 								 --training_name=group_local/local_lstm_model_v$v \
-								 --ent_vecs_regularization=l2dropout  --evaluation_minutes=10 --nepoch_no_imprv=6 \
+								 --ent_vecs_regularization=l2dropout  --evaluation_minutes=1 --nepoch_no_imprv=6 \
 								 --span_emb="boundaries"  \
 								 --dim_char=50 --hidden_size_char=50 --hidden_size_lstm=150 \
 								 --nn_components=pem_lstm_attention \
