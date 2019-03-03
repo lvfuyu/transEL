@@ -2,11 +2,14 @@ import tensorflow as tf
 import numpy as np
 import model.config as config
 
+
 def projection(inputs, output_size, initializer=None, model=None):
     return ffnn(inputs, 0, -1, output_size, dropout=None, output_weights_initializer=initializer, model=model)
 
+
 def shape(x, dim):
     return x.get_shape()[dim].value or tf.shape(x)[dim]
+
 
 def ffnn(inputs, num_hidden_layers, hidden_size, output_size, dropout, output_weights_initializer=None, model=None):
     l2maxnorm = model.args.ffnn_l2maxnorm if model else None
@@ -59,7 +62,6 @@ def ffnn(inputs, num_hidden_layers, hidden_size, output_size, dropout, output_we
     return outputs
 
 
-
 def variable_summaries(var):
     """Attach a lot of summaries to a Tensor (for TensorBoard visualization)."""
     name = "_" + var.name.split("/")[-1].split(":")[0]
@@ -77,6 +79,8 @@ def variable_summaries(var):
 import sys
 # https://stackoverflow.com/questions/616645/how-do-i-duplicate-sys-stdout-to-a-log-file-in-python
 # http://web.archive.org/web/20141016185743/https://mail.python.org/pipermail/python-list/2007-May/460639.html
+
+
 class Tee(object):
 
     def __init__(self, name, mode):
@@ -114,7 +118,9 @@ def _correct_train_args_leohnard_dalab(train_args, model_folder):
         train_args.summaries_folder = model_folder + "summaries/"
         train_args.inconsistent_model_folder = True
 
+
 import pickle
+
 
 def load_train_args(output_folder, running_mode):
     """running_mode: train, train_continue, evaluate, ensemble_eval, gerbil"""
@@ -187,8 +193,6 @@ def load_ent_vecs(args):
                                            "/ent_vecs/ent_vecs.npy")
         entity_embeddings_nparray = np.vstack((entity_embeddings_nparray, entity_extension))
     return entity_embeddings_nparray
-
-
 
 
 if __name__ == "__main__":
