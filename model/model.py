@@ -5,8 +5,7 @@ import numpy as np
 import pickle
 import tensorflow as tf
 import model.config as config
-
-from .transformer import Transformer
+# from .transformer import Transformer
 from .base_model import BaseModel
 import model.util as util
 
@@ -157,13 +156,13 @@ class Model(BaseModel):
             self.context_emb = tf.nn.dropout(output, self.dropout)
             #print("context_emb = ", self.context_emb)  # [batch, words, 300]
 
-    def add_context_tr_emb_op(self):
-        hparams = {"num_units": 400, "dropout": self.dropout, "is_training":True, "num_multi_head": 8, "num_heads":8, "max_seq_len": 3000} 
-        with tf.variable_scope("context-bi-transformer"):
-            transformer = Transformer(hparams)
-            output = transformer.encoder(self.word_embeddings, self.words_len)
-            # self.context_emb = tf.nn.dropout(output, self.dropout)
-            self.context_emb = output
+    # def add_context_tr_emb_op(self):
+    #     hparams = {"num_units": 400, "dropout": self.dropout, "is_training":True, "num_multi_head": 8, "num_heads":8, "max_seq_len": 3000}
+    #     with tf.variable_scope("context-bi-transformer"):
+    #         transformer = Transformer(hparams)
+    #         output = transformer.encoder(self.word_embeddings, self.words_len)
+    #         # self.context_emb = tf.nn.dropout(output, self.dropout)
+    #         self.context_emb = output
 
     def add_span_emb_op(self):
         mention_emb_list = []
@@ -328,8 +327,8 @@ class Model(BaseModel):
         stack_values = []
         if self.args.nn_components.find("lstm") != -1:
             stack_values.append(self.similarity_scores)
-        if self.args.nn_components.find("trans") != -1:
-            stack_values.append(self.similarity_scores)
+        # if self.args.nn_components.find("trans") != -1:
+        #     stack_values.append(self.similarity_scores)
         if self.args.nn_components.find("pem") != -1:
             stack_values.append(self.log_cand_entities_scores)
         if self.args.nn_components.find("attention") != -1:
@@ -401,10 +400,10 @@ class Model(BaseModel):
             self.add_context_emb_op()
             self.add_span_emb_op()
             self.add_lstm_score_op()
-        if self.args.nn_components.find("trans") != -1:
-            self.add_context_tr_emb_op()
-            self.add_span_emb_op()
-            self.add_lstm_score_op()
+        # if self.args.nn_components.find("trans") != -1:
+        #     self.add_context_tr_emb_op()
+        #     self.add_span_emb_op()
+        #     self.add_lstm_score_op()
         if self.args.nn_components.find("attention") != -1:
             self.add_local_attention_op()
         self.add_cand_ent_scores_op()
