@@ -233,4 +233,3 @@ if __name__ == "__main__":
     evaluate()
     elapsed = (time.clock() - start)
     print("Time used:",elapsed)
-

@@ -513,5 +513,3 @@ class Model(BaseModel):
         else:
             temp_mask = tf.sequence_mask(mytensor, max_width, dtype=tf.float32)
         return temp_mask
-
-

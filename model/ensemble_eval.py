@@ -210,4 +210,3 @@ if __name__ == "__main__":
         printPredictions = PrintPredictions(config.base_folder+"data/tfrecords/"+
                          args.experiment_name+"/", args.predictions_folder)
     evaluate()
-
