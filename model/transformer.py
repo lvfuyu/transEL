@@ -135,7 +135,6 @@ class Transformer:
 
     def encoder(self, inputs, seq_len):
         max_seq_len = tf.shape(inputs)[1]
-        #max_seq_len = tf.shape(inputs)[1]
         key_masks_1d = tf.sequence_mask(seq_len, max_seq_len)
         attn_outputs = inputs
 
