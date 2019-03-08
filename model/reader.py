@@ -95,6 +95,6 @@ def test_input_pipeline(filenames, args):
 
 
 if __name__ == "__main__":
-    count_records_of_one_epoch(["/home/master_thesis_share/data/tfrecords/"
-                               "wikiRLTD_perparagr_wthr_6_cthr_201/"
-                               "train/wikidumpRLTD.txt"])
+    count_records_of_one_epoch(["/users/guotonglei/entity_linking/end2end_neural_el/data/tfrecords/"
+                               "corefmerge/"
+                               "gmonly/wikipedia"])

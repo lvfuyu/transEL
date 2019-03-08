@@ -610,7 +610,7 @@ class TFRecordsGenerator(object):
         #the name of the dataset. just extract the last part of path
         filename = os.path.basename(os.path.normpath(filepath))[:-4]  # omit the '.txt'
         output_folder = config.base_folder+"data/tfrecords/"+args.experiment_name+"/"
-        output_folder += "gmonly/" if self.is_gmonly_mode() else "allspans/"
+        output_folder += "gmonly_mask/" if self.is_gmonly_mode() else "allspans/"
         if not os.path.exists(output_folder):
             os.makedirs(output_folder)
         writer = tf.python_io.TFRecordWriter(output_folder+filename)
@@ -627,7 +627,7 @@ class TFRecordsGenerator(object):
 
 
 def create_tfrecords():
-    new_dataset_folder = config.base_folder+"data/new_datasets/"
+    new_dataset_folder = config.base_folder+"data/mask_datasets/"
     datasets = [os.path.basename(os.path.normpath(d)) for d in util.get_immediate_files(new_dataset_folder)]
     print("datasets: ", datasets)
 
