@@ -291,11 +291,9 @@ def _parse_args():
                                 "output of contextual bilstm for start and end of span we use word+char emb")
     parser.add_argument("--span_emb", default="boundaries_head", help="boundaries for start and end, and head")
 
-
     parser.add_argument("--max_mention_width", type=int, default=10)
     parser.add_argument("--use_features", type=bool, default=False, help="like mention width")
     parser.add_argument("--feature_size", type=int, default=20)   # each width is represented by a vector of that size
-
 
     parser.add_argument("--ent_vecs_regularization", default="l2dropout", help="'no', "
                                 "'dropout', 'l2', 'l2dropout'")
@@ -305,7 +303,6 @@ def _parse_args():
                         "so 2_100 means 2 hidden layers of width 100 and then projection to output size"
                         ". 0_0 means just projecting without hidden layers")
     parser.add_argument("--final_score_ffnn", default="1_100", help="int_int  look span_emb_ffnn")
-
 
     parser.add_argument("--gamma_thr", type=float, default=0.2)
 
@@ -347,8 +344,8 @@ def _parse_args():
     parser.add_argument("--attention_R", type=int, default=30, help="hard attention")
     parser.add_argument("--attention_use_AB", type=bool, default=False)
     parser.add_argument("--attention_on_lstm", type=bool, default=False, help="instead of using attention on"
-                    "original pretrained word embedding. use it on vectors or lstm, "
-                    "needs also projection now the context vector x_c to 300 dimensions")
+                        "original pretrained word embedding. use it on vectors or lstm, "
+                        "needs also projection now the context vector x_c to 300 dimensions")
     parser.add_argument("--attention_ent_vecs_no_regularization", type=bool, default=False)
     parser.add_argument("--attention_retricted_num_of_entities", type=int, default=None,
                         help="instead of using 30 entities for creating the context vector we use only"
