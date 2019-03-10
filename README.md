@@ -10,3 +10,9 @@
 
 [mask_index:]
 0
+
+[begin_span:]
+[0, 5, 8, 18]
+
+[end_span:]
+[1, 5, 8, 20]
