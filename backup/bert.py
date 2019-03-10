@@ -770,7 +770,7 @@ def transformer_model(input_tensor,
   https://arxiv.org/abs/1706.03762
 
   Also see:
-  https://github.com/tensorflow/tensor2tensor/blob/master/tensor2tensor/models/transformer_global_old.py
+  https://github.com/tensorflow/tensor2tensor/blob/master/tensor2tensor/models/transformer.py
 
   Args:
     input_tensor: float Tensor of shape [batch_size, seq_length, hidden_size].
