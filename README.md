@@ -3,10 +3,10 @@
 ### Global model tf records example:
 
 [words:]
-<u>President Obama</u> and his wife <u>Michelle</u> handed out <u>Halloween</u> treats to area children and military families at the <u>White House Sunday</u> evening
+(President Obama) and his wife (Michelle) handed out (Halloween) treats to area children and military families at the (White House Sunday) evening
 
 [entities:]
-<u>x         x</u>     x   x   x    <u>enid_2</u>   x      x   <u>enid_3</u>    x      x  x    x        x   x         x       x  x   <u>enid_4 enid_4 enid_4</u> x
+(x         x)     x   x   x    (enid_2)   x      x   (enid_3)    x      x  x    x        x   x         x       x  x   (enid_4 enid_4 enid_4) x
 
 [mask_index:]
 0
