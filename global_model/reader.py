@@ -1,12 +1,10 @@
 import tensorflow as tf
-import argparse
-import model.config as config
-import pickle
 
 
 def parse_sequence_example(serialized):
     sequence_features={
-            "words": tf.FixedLenSequenceFeature([], dtype=tf.int64),   # in order to have a vector. if i put [1] it will probably
+            # in order to have a vector. if i put [1] it will probably
+            "words": tf.FixedLenSequenceFeature([], dtype=tf.int64),
             # be a matrix with just one column
             "chars": tf.VarLenFeature(tf.int64),
             "chars_len": tf.FixedLenSequenceFeature([], dtype=tf.int64),
@@ -28,7 +26,8 @@ def parse_sequence_example(serialized):
             "chunk_id": tf.FixedLenFeature([], dtype=tf.string),
             "words_len": tf.FixedLenFeature([], dtype=tf.int64),
             "spans_len": tf.FixedLenFeature([], dtype=tf.int64),
-            "ground_truth_len": tf.FixedLenFeature([], dtype=tf.int64)
+            "ground_truth_len": tf.FixedLenFeature([], dtype=tf.int64),
+            "mask_index": tf.FixedLenFeature([], dtype=tf.int64),
         },
         sequence_features=sequence_features)
 
@@ -40,8 +39,7 @@ def parse_sequence_example(serialized):
            tf.sparse_tensor_to_dense(sequence["cand_entities_labels"]),\
            sequence["cand_entities_len"],\
            sequence["ground_truth"], context["ground_truth_len"],\
-           sequence["begin_gm"], sequence["end_gm"]
-    #return context, sequence
+           sequence["begin_gm"], sequence["end_gm"], context["mask_index"]
 
 
 def count_records_of_one_epoch(trainfiles):
@@ -78,9 +76,7 @@ def count_records_of_one_epoch(trainfiles):
 
 def train_input_pipeline(filenames, args):
     dataset = tf.data.TFRecordDataset(filenames)
-    #dataset = tf.contrib.data.TFRecordDataset(filenames)
     dataset = dataset.map(parse_sequence_example)
-    #dataset = dataset.map(parse_sequence_example, num_parallel_calls=3)
     dataset = dataset.repeat()
     dataset = dataset.shuffle(buffer_size=args.shuffle_capacity)
     dataset = dataset.padded_batch(args.batch_size, dataset.output_shapes)

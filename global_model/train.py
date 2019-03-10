@@ -1,5 +1,5 @@
 import argparse
-import model.reader as reader
+import global_model.reader as reader
 import model.config as config
 import os
 import tensorflow as tf
@@ -8,6 +8,7 @@ import time
 import pickle
 import numpy as np
 from model.util import load_train_args
+from global_model.model import Model
 
 
 def create_training_pipelines(args):
@@ -35,11 +36,6 @@ def tensorboard_writers(graph):
     tf_writers["ed_pr"] = tf.summary.FileWriter(args.summaries_folder + 'ed_pr/')
     tf_writers["ed_re"] = tf.summary.FileWriter(args.summaries_folder + 'ed_re/')
     tf_writers["ed_f1"] = tf.summary.FileWriter(args.summaries_folder + 'ed_f1/')
-    #tf_writers["ed_pr@1"] = tf.summary.FileWriter(args.summaries_folder + 'ed_pr@1/')
-
-    tf_writers["el_pr"] = tf.summary.FileWriter(args.summaries_folder + 'el_pr/')
-    tf_writers["el_re"] = tf.summary.FileWriter(args.summaries_folder + 'el_re/')
-    tf_writers["el_f1"] = tf.summary.FileWriter(args.summaries_folder + 'el_f1/')
     return tf_writers
 
 
@@ -143,8 +139,8 @@ def compute_ed_el_scores(model, handles, names, iterators, el_mode):
     micro_results = []
     macro_results = []
     for test_handle, test_name, test_it in zip(handles, names, iterators):
-        micro_f1, macro_f1 = validation_loss_calculation(model, test_it, test_handle, opt_thr,
-                                               el_mode=el_mode, name=test_name)
+        micro_f1, macro_f1 = validation_loss_calculation(model, test_it, test_handle,
+                                                         opt_thr, el_mode=el_mode, name=test_name)
         micro_results.append(micro_f1)
         macro_results.append(macro_f1)
 
@@ -159,22 +155,18 @@ def train():
     training_dataset = create_training_pipelines(args)
 
     ed_datasets, ed_names = create_el_ed_pipelines(gmonly_flag=True, filenames=args.ed_datasets, args=args)
-    el_datasets, el_names = create_el_ed_pipelines(gmonly_flag=False, filenames=args.el_datasets, args=args)
 
     input_handle_ph = tf.placeholder(tf.string, shape=[], name="input_handle_ph")
     iterator = tf.contrib.data.Iterator.from_string_handle(
         input_handle_ph, training_dataset.output_types, training_dataset.output_shapes)
     next_element = iterator.get_next()
-    #print(next_element)
+    # print(next_element)
 
-    if args.ablations:
-        from model.model_ablations import Model
-    else:
-        from model.model import Model
     model = Model(args, next_element)
     model.build()
-    model.input_handle_ph = input_handle_ph    # just for convenience so i can access it from everywhere
-    #print(tf.global_variables())
+    # just for convenience so i can access it from everywhere
+    model.input_handle_ph = input_handle_ph
+    # print(tf.global_variables())
 
     tf_writers = tensorboard_writers(model.sess.graph)
     model.tf_writers = tf_writers   # for accessing convenience
@@ -196,25 +188,22 @@ def train():
         training_handle = sess.run(training_iterator.string_handle())
 
         ed_iterators, ed_handles = ed_el_dataset_handles(ed_datasets)
-        el_iterators, el_handles = ed_el_dataset_handles(el_datasets)
 
         # Loop forever, alternating between training and validation.
         best_ed_score = 0
-        best_el_score = 0
         termination_ed_score = 0
-        termination_el_score = 0
         nepoch_no_imprv = 0  # for early stopping
         train_step = 0
         while True:
             total_train_loss = 0
-            # for _ in range(args.steps_before_evaluation):          # for training based on training steps
+            # for training based on training steps
+            # for _ in range(args.steps_before_evaluation):
             wall_start = time.time()
-            while ( (time.time() - wall_start) / 60 ) <= args.evaluation_minutes:
+            while ((time.time() - wall_start) / 60) <= args.evaluation_minutes:
                 train_step += 1
-                if args.ffnn_l2maxnorm:
-                    sess.run(model.ffnn_l2normalization_op_list)
-                _, loss = sess.run([model.train_op, model.loss], feed_dict={input_handle_ph: training_handle, model.dropout: args.dropout,
-                                                          model.lr: model.args.lr})
+                _, loss = sess.run([model.train_op, model.loss],
+                                   feed_dict={input_handle_ph: training_handle, model.dropout: args.dropout,
+                                              model.lr: model.args.lr})
                 total_train_loss += loss
 
             args.eval_cnt += 1
@@ -231,46 +220,35 @@ def train():
                 print("Evaluating ED datasets")
                 ed_scores = compute_ed_el_scores(model, ed_handles, ed_names, ed_iterators, el_mode=False)
                 comparison_ed_score = np.mean(np.array(ed_scores)[args.ed_val_datasets])
-            if el_names:
-                print("Evaluating EL datasets")
-                el_scores = compute_ed_el_scores(model, el_handles, el_names, el_iterators, el_mode=True)
-                comparison_el_score = np.mean(np.array(el_scores)[args.el_val_datasets])
             print("Evaluation duration in minutes: ", (time.time() - wall_start) / 60)
 
-            #comparison_ed_score = (ed_scores[1] + ed_scores[4]) / 2   # aida_dev + acquaint
-            #comparison_score = ed_scores[1]  # aida_dev
+            # comparison_ed_score = (ed_scores[1] + ed_scores[4]) / 2   # aida_dev + acquaint
+            # comparison_score = ed_scores[1]  # aida_dev
             if model.args.lr_decay > 0:
                 model.args.lr *= model.args.lr_decay  # decay learning rate
             text = ""
             best_ed_flag = False
-            best_el_flag = False
-            # otherwise not significant improvement 75.2 to 75.3 micro_f1 of aida_dev
-            if comparison_ed_score >= best_ed_score + 0.1: # args.improvement_threshold:
+
+            if comparison_ed_score >= best_ed_score + 0.1:  # args.improvement_threshold:
                 text = "- new best ED score!" + " prev_best= " + str(best_ed_score) +\
                        " new_best= " + str(comparison_ed_score)
                 best_ed_flag = True
                 best_ed_score = comparison_ed_score
-            if comparison_el_score >= best_el_score + 0.1: #args.improvement_threshold:
-                text += "- new best EL score!" + " prev_best= " + str(best_el_score) +\
-                       " new_best= " + str(comparison_el_score)
-                best_el_flag = True
-                best_el_score = comparison_el_score
-            if best_ed_flag or best_el_flag: # keep checkpoint
+
+            if best_ed_flag:  # keep checkpoint
                 print(text)
                 if args.nocheckpoints is False:
-                    model.save_session(args.eval_cnt, best_ed_flag, best_el_flag)
+                    model.save_session(args.eval_cnt, best_ed_flag, False)
+
             # check for termination now.
-            if comparison_ed_score >= termination_ed_score + args.improvement_threshold\
-                    or comparison_el_score >= termination_el_score + args.improvement_threshold:
+            if comparison_ed_score >= termination_ed_score + args.improvement_threshold:
                 print("significant improvement. reset termination counter")
                 termination_ed_score = comparison_ed_score
-                termination_el_score = comparison_el_score
                 nepoch_no_imprv = 0
             else:
                 nepoch_no_imprv += 1
                 if nepoch_no_imprv >= args.nepoch_no_imprv:
-                    print("- early stopping {} epochs without "
-                                     "improvement".format(nepoch_no_imprv))
+                    print("- early stopping {} epochs without improvement".format(nepoch_no_imprv))
                     terminate()
                     break
 
