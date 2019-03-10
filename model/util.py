@@ -39,7 +39,7 @@ def ffnn(inputs, num_hidden_layers, hidden_size, output_size, dropout, output_we
             current_outputs = tf.nn.dropout(current_outputs, dropout)
         current_inputs = current_outputs
 
-                              #    500                  1
+    #    500                  1
     output_weights = tf.get_variable("output_weights", [shape(current_inputs, 1), output_size], initializer=output_weights_initializer)
     output_bias = tf.get_variable("output_bias", [output_size])
     variable_summaries(output_weights)

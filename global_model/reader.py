@@ -8,6 +8,9 @@ def parse_sequence_example(serialized):
             # be a matrix with just one column
             "chars": tf.VarLenFeature(tf.int64),
             "chars_len": tf.FixedLenSequenceFeature([], dtype=tf.int64),
+            # entity ids
+            "entities": tf.FixedLenSequenceFeature([], dtype=tf.int64),
+            # mention postions
             "begin_span": tf.FixedLenSequenceFeature([], dtype=tf.int64),
             "end_span": tf.FixedLenSequenceFeature([], dtype=tf.int64),
             "cand_entities": tf.VarLenFeature(tf.int64),
@@ -39,7 +42,8 @@ def parse_sequence_example(serialized):
            tf.sparse_tensor_to_dense(sequence["cand_entities_labels"]),\
            sequence["cand_entities_len"],\
            sequence["ground_truth"], context["ground_truth_len"],\
-           sequence["begin_gm"], sequence["end_gm"], context["mask_index"]
+           sequence["begin_gm"], sequence["end_gm"], \
+           context["mask_index"], sequence["entities"]
 
 
 def count_records_of_one_epoch(trainfiles):
