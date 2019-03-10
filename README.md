@@ -1,12 +1,12 @@
-A deep collective Entity Linking model for entity disambiguation.
+# A deep collective Entity Linking model for entity disambiguation.
 
-Global model tf records example:
+### Global model tf records example:
 
 [words:]
-President   Obama   and his wife Michelle handed out Halloween treats to area children and military families at the White House Sunday evening
+<u>President Obama</u> and his wife <u>Michelle</u> handed out <u>Halloween</u> treats to area children and military families at the <u>White House Sunday</u> evening
 
 [entities:]
-x(enid_1) x(enid_1)  x   x   x    enid_2    x     x    enid_3    x    x   x      x      x     x         x    x   x  enid_4 enid_4 enid_4 x
+<u>x         x</u>     x   x   x    <u>enid_2</u>   x      x   <u>enid_3</u>    x      x  x    x        x   x         x       x  x   <u>enid_4 enid_4 enid_4</u> x
 
 [mask_index:]
 0
