@@ -12,8 +12,7 @@ from global_model.model import Model
 
 
 def create_training_pipelines(args):
-    folder = "../data/tfrecords/" + args.experiment_name + \
-             ("/allspans/" if args.all_spans_training else "/gmonly/")
+    folder = "../data/tfrecords/" + args.experiment_name + ("/allspans/" if args.all_spans_training else "/gmonly/")
     training_dataset = reader.train_input_pipeline([folder + file for file in args.train_datasets], args)
     return training_dataset
 
@@ -22,7 +21,7 @@ def create_el_ed_pipelines(gmonly_flag, filenames, args):
     if filenames is None:
         return [], []
 
-    folder = config.base_folder+"data/tfrecords/" + args.experiment_name + ("/gmonly/" if gmonly_flag else "/allspans/")
+    folder = config.base_folder + "data/tfrecords/" + args.experiment_name + ("/gmonly/" if gmonly_flag else "/allspans/")
     test_datasets = []
     for file in filenames:
         test_datasets.append(reader.test_input_pipeline([folder+file], args))
@@ -33,9 +32,6 @@ def create_el_ed_pipelines(gmonly_flag, filenames, args):
 def tensorboard_writers(graph):
     tf_writers = dict()
     tf_writers["train"] = tf.summary.FileWriter(args.summaries_folder + 'train/', graph)
-    tf_writers["ed_pr"] = tf.summary.FileWriter(args.summaries_folder + 'ed_pr/')
-    tf_writers["ed_re"] = tf.summary.FileWriter(args.summaries_folder + 'ed_re/')
-    tf_writers["ed_f1"] = tf.summary.FileWriter(args.summaries_folder + 'ed_f1/')
     return tf_writers
 
 
@@ -169,7 +165,7 @@ def train():
     # print(tf.global_variables())
 
     tf_writers = tensorboard_writers(model.sess.graph)
-    model.tf_writers = tf_writers   # for accessing convenience
+    model.tf_writers = tf_writers  # for accessing convenience
 
     # The `Iterator.string_handle()` method returns a tensor that can be evaluated
     # and used to feed the `handle` placeholder.
@@ -215,7 +211,7 @@ def train():
             tf_writers["train"].add_summary(summary, args.eval_cnt)
 
             wall_start = time.time()
-            comparison_ed_score = comparison_el_score = -0.1
+            comparison_ed_score = -0.1
             if ed_names:
                 print("Evaluating ED datasets")
                 ed_scores = compute_ed_el_scores(model, ed_handles, ed_names, ed_iterators, el_mode=False)
@@ -230,7 +226,7 @@ def train():
             best_ed_flag = False
 
             if comparison_ed_score >= best_ed_score + 0.1:  # args.improvement_threshold:
-                text = "- new best ED score!" + " prev_best= " + str(best_ed_score) +\
+                text = "- new best ED score!" + " prev_best= " + str(best_ed_score) + \
                        " new_best= " + str(comparison_ed_score)
                 best_ed_flag = True
                 best_ed_score = comparison_ed_score
@@ -288,15 +284,14 @@ def _parse_args():
     parser.add_argument("--model_heads_from_bilstm", type=bool, default=False,
                         help="use the bilstm vectors for the head instead of the word embeddings")
     parser.add_argument("--span_boundaries_from_wordemb", type=bool, default=False, help="instead of using the "
-                                "output of contextual bilstm for start and end of span we use word+char emb")
+                        "output of contextual bilstm for start and end of span we use word+char emb")
     parser.add_argument("--span_emb", default="boundaries_head", help="boundaries for start and end, and head")
 
     parser.add_argument("--max_mention_width", type=int, default=10)
     parser.add_argument("--use_features", type=bool, default=False, help="like mention width")
     parser.add_argument("--feature_size", type=int, default=20)   # each width is represented by a vector of that size
 
-    parser.add_argument("--ent_vecs_regularization", default="l2dropout", help="'no', "
-                                "'dropout', 'l2', 'l2dropout'")
+    parser.add_argument("--ent_vecs_regularization", default="l2dropout", help="'no', ""'dropout', 'l2', 'l2dropout'")
 
     parser.add_argument("--span_emb_ffnn", default="0_0", help="int_int  the first int"
                         "indicates the number of hidden layers and the second the hidden size"
@@ -312,12 +307,12 @@ def _parse_args():
     parser.add_argument("--ed_datasets", default="")
     parser.add_argument("--ed_val_datasets", default="1", help="based on these datasets pick the optimal"
                                                                "gamma thr and also consider early stopping")
-                                                #--ed_val_datasets=1_4  # aida_dev, aquaint
+    # --ed_val_datasets=1_4  # aida_dev, aquaint
     parser.add_argument("--el_datasets", default="")
-    parser.add_argument("--el_val_datasets", default="1") #--el_val_datasets=1_4   # aida_dev, aquaint
+    parser.add_argument("--el_val_datasets", default="1")  # --el_val_datasets=1_4  # aida_dev, aquaint
 
     parser.add_argument("--train_datasets", default="aida_train.txt")
-                        #--train_datasets=aida_train.txt_z_wikidumpRLTD.txt
+    # --train_datasets=aida_train.txt_z_wikidumpRLTD.txt
 
     parser.add_argument("--continue_training", type=bool, default=False,
                         help="if true then just restore the previous command line"
@@ -334,12 +329,11 @@ def _parse_args():
     parser.add_argument("--fast_evaluation", type=bool, default=False, help="if all_spans training then evaluate only"
                                             "on el tests, corresponding if gm training evaluate only on ed tests.")
 
-
     parser.add_argument("--entity_extension", default=None, help="extension_entities or extension_entities_all etc")
 
     parser.add_argument("--nn_components", default="pem_lstm", help="each option is one scalar, then these are fed to"
-                            "the final ffnn and we have the final score. choose any combination you want: e.g"
-                            "pem_lstm_attention_global, pem_attention, lstm_attention, pem_lstm_global, etc")
+                        "the final ffnn and we have the final score. choose any combination you want: e.g"
+                        "pem_lstm_attention_global, pem_attention, lstm_attention, pem_lstm_global, etc")
     parser.add_argument("--attention_K", type=int, default=100, help="K from left and K from right, in total 2K")
     parser.add_argument("--attention_R", type=int, default=30, help="hard attention")
     parser.add_argument("--attention_use_AB", type=bool, default=False)
@@ -363,7 +357,7 @@ def _parse_args():
     parser.add_argument("--global_gmask_unambigious", type=bool, default=False)
 
     parser.add_argument("--hardcoded_thr", type=float, default=None, help="if this is specified then we don't calculate"
-                           "optimal threshold based on the dev dataset but use this one.")
+                        "optimal threshold based on the dev dataset but use this one.")
     parser.add_argument("--ffnn_dropout", dest="ffnn_dropout", action='store_true')
     parser.add_argument("--no_ffnn_dropout", dest="ffnn_dropout", action='store_false')
     parser.set_defaults(ffnn_dropout=True)
@@ -373,7 +367,7 @@ def _parse_args():
     parser.add_argument("--ffnn_l2maxnorm_onlyhiddenlayers", type=bool, default=False)
 
     parser.add_argument("--cand_ent_num_restriction", type=int, default=None, help="for reducing memory usage and"
-                                "avoiding OOM errors in big NN I can reduce the number of candidate ent for each span")
+                        "avoiding OOM errors in big NN I can reduce the number of candidate ent for each span")
     # --ed_datasets=  --el_datasets="aida_train.txt_z_aida_dev.txt"     which means i can leave something empty
     # and i can also put "" in the cla
 
@@ -457,7 +451,6 @@ def _parse_args():
 def log_args(filepath):
     with open(filepath, "w") as fout:
         attrs = vars(args)
-        # {'kids': 0, 'name': 'Dog', 'color': 'Spotted', 'age': 10, 'legs': 2, 'smell': 'Alot'}
         fout.write('\n'.join("%s: %s" % item for item in attrs.items()))
 
     with open(args.output_folder+"train_args.pickle", 'wb') as handle:

@@ -7,6 +7,6 @@
 # [batch, num_mentions, emb i.e. 1700] formula (2) concatenation
 # print("mention_start_emb = ", mention_start_emb)
 # print("mention_end_emb = ", mention_end_emb)
-
-
-
+# tf_writers["ed_pr"] = tf.summary.FileWriter(args.summaries_folder + 'ed_pr/')
+# tf_writers["ed_re"] = tf.summary.FileWriter(args.summaries_folder + 'ed_re/')
+# tf_writers["ed_f1"] = tf.summary.FileWriter(args.summaries_folder + 'ed_f1/')
