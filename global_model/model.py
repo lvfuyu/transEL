@@ -37,11 +37,11 @@ class Model(BaseModel):
             self.cand_entities_len, self.ground_truth, self.ground_truth_len,\
             self.begin_gm, self.end_gm, self.mask_index, self.entities = next_element
 
+            # process
             self.begin_span = tf.cast(self.begin_span, tf.int32)
             self.end_span = tf.cast(self.end_span, tf.int32)
             self.words_len = tf.cast(self.words_len, tf.int32)
             self.cand_entities_labels = tf.cast(self.cand_entities_labels, tf.float32)
-
             # slice cand entities of mask index
             # shape = [batch_size, max number of cand entitites]
             self.cand_entities = self.extract_axis_1(self.cand_entities, self.mask_index)
@@ -53,11 +53,11 @@ class Model(BaseModel):
             # loss mask
             self.loss_mask = tf.sequence_mask(self.cand_entities_len, tf.shape(self.cand_entities)[1], dtype=tf.float32)
 
-        with open(config.base_folder + "data/tfrecords/" + self.args.experiment_name + "/word_char_maps.pickle", 'rb') \
-                as handle:
+        with open(config.base_folder + "data/tfrecords/" + self.args.experiment_name + "/word_char_maps.pickle", 'rb') as handle:
             _, id2word, _, id2char, _, _ = pickle.load(handle)
             self.nwords = len(id2word)
             self.nchars = len(id2char)
+            self.nentities = len(load_wikiid2nnid(extension_name=self.args.entity_extension))
 
     def extract_axis_1(self, data, ind):
         """
@@ -92,8 +92,7 @@ class Model(BaseModel):
 
     def add_embeddings_op(self):
         """Defines self.cand/entity_embeddings"""
-        with tf.variable_scope("entities"):
-            self.nentities = len(load_wikiid2nnid(extension_name=self.args.entity_extension))
+        with tf.variable_scope("entity_embeddings"):
             _entity_embeddings = tf.Variable(
                 tf.constant(0.0, shape=[self.nentities, 300]),
                 name="_entity_embeddings",
@@ -117,7 +116,7 @@ class Model(BaseModel):
                                                        name="entity_embeddings")
 
         """Defines self.word_embeddings"""
-        with tf.variable_scope("words"):
+        with tf.variable_scope("word_embeddings"):
             _word_embeddings = tf.Variable(
                 tf.constant(0.0, shape=[self.nwords, 300]),
                 name="_word_embeddings",
@@ -138,7 +137,7 @@ class Model(BaseModel):
             self.context_emb = output
 
     def add_span_emb_op(self):
-        with tf.variable_scope("mask_span_emb"):
+        with tf.variable_scope("mask_span_embedding"):
             mention_emb_list = []
             # span embedding based on boundaries (start, end) and head mechanism.
             boundaries_input_vecs = self.context_emb
@@ -163,9 +162,9 @@ class Model(BaseModel):
         with tf.variable_scope("loss"):
             loss1 = self.cand_entities_labels * tf.nn.relu(self.args.gamma_thr - self.final_scores)
             loss2 = (1 - self.cand_entities_labels) * tf.nn.relu(self.final_scores)
-            self.loss = loss1 + loss2
-            self.loss = self.loss_mask * self.loss
-            self.loss = tf.reduce_sum(self.loss)
+            loss = loss1 + loss2
+            loss = self.loss_mask * loss
+            self.loss = tf.reduce_sum(loss)
 
     def build(self):
         self.add_placeholders()
