@@ -2,7 +2,7 @@ import tensorflow as tf
 
 
 def parse_sequence_example(serialized):
-    sequence_features={
+    sequence_features = {
             # in order to have a vector. if i put [1] it will probably be a matrix with just one column
             "words": tf.FixedLenSequenceFeature([], dtype=tf.int64),
             "chars": tf.VarLenFeature(tf.int64),
