@@ -16,9 +16,9 @@
 [mask_index:] 0
 [begin_span:] [0, 5, 8, 18]
 [end_span:]   [1, 5, 8, 20]
-```
 x_x_x: string type, default entity ids
 e1_e2_e3: string type, top3 ids predicted by local model
+```
 
 ### Global model tf records example 3
 ```
@@ -29,4 +29,5 @@ e1_e2_e3: string type, top3 ids predicted by local model
 [mask_index:] 0
 [begin_span:] [0, 5, 8, 18]
 [end_span:]   [1, 5, 8, 20]
+entities, entities_1, entities_2: same type with example 1
 ```
