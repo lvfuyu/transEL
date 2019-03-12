@@ -61,7 +61,7 @@ def count_records_of_one_epoch(trainfiles):
         try:
             while not coord.should_stop():
                 fetch_vals = sess.run((key))
-                #print(fetch_vals)
+                # print(fetch_vals)
                 counter += 1
         except tf.errors.OutOfRangeError:
             pass
