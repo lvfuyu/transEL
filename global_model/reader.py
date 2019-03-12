@@ -3,25 +3,21 @@ import tensorflow as tf
 
 def parse_sequence_example(serialized):
     sequence_features={
-            # in order to have a vector. if i put [1] it will probably
+            # in order to have a vector. if i put [1] it will probably be a matrix with just one column
             "words": tf.FixedLenSequenceFeature([], dtype=tf.int64),
-            # be a matrix with just one column
             "chars": tf.VarLenFeature(tf.int64),
             "chars_len": tf.FixedLenSequenceFeature([], dtype=tf.int64),
-            # entity ids
-            "entities": tf.FixedLenSequenceFeature([], dtype=tf.int64),
-            # mention postions
-            "begin_span": tf.FixedLenSequenceFeature([], dtype=tf.int64),
+            "entities": tf.FixedLenSequenceFeature([], dtype=tf.int64),  # entity ids
+            "begin_span": tf.FixedLenSequenceFeature([], dtype=tf.int64),  # mention positions
             "end_span": tf.FixedLenSequenceFeature([], dtype=tf.int64),
             "cand_entities": tf.VarLenFeature(tf.int64),
             "cand_entities_scores": tf.VarLenFeature(tf.float32),
             "cand_entities_labels": tf.VarLenFeature(tf.int64),
             "cand_entities_len": tf.FixedLenSequenceFeature([], dtype=tf.int64),
-            "ground_truth": tf.FixedLenSequenceFeature([], dtype=tf.int64)
+            "ground_truth": tf.FixedLenSequenceFeature([], dtype=tf.int64),
+            "begin_gm": tf.FixedLenSequenceFeature([], dtype=tf.int64),
+            "end_gm": tf.FixedLenSequenceFeature([], dtype=tf.int64)
     }
-    if True:
-        sequence_features["begin_gm"] = tf.FixedLenSequenceFeature([], dtype=tf.int64)
-        sequence_features["end_gm"] = tf.FixedLenSequenceFeature([], dtype=tf.int64)
 
     context, sequence = tf.parse_single_sequence_example(
         serialized,
