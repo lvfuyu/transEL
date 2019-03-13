@@ -1,6 +1,6 @@
 for v in 1
 do
-python3 -m model.train
+python3 -m global_model.train \
         --batch_size=4 --experiment_name=corefmerge \
 		--training_name=group_gloal/global_trans_400_1_4_model_v$v \
 		--evaluation_minutes=100 --nepoch_no_imprv=6 \
