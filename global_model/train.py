@@ -12,16 +12,16 @@ from global_model.model import Model
 
 
 def create_training_pipelines(args):
-    folder = "../data/tfrecords/" + args.experiment_name + ("/allspans/" if args.all_spans_training else "/gmonly/")
+    folder = config.base_folder + "data/tfrecords/" + args.experiment_name + "/gmonly_gt_mask/"
     training_dataset = reader.train_input_pipeline([folder + file for file in args.train_datasets], args)
     return training_dataset
 
 
-def create_el_ed_pipelines(gmonly_flag, filenames, args):
+def create_el_ed_pipelines(filenames, args):
     if filenames is None:
         return [], []
 
-    folder = config.base_folder + "data/tfrecords/" + args.experiment_name + ("/gmonly/" if gmonly_flag else "/allspans/")
+    folder = config.base_folder + "data/tfrecords/" + args.experiment_name + "/gmonly/"
     test_datasets = []
     for file in filenames:
         test_datasets.append(reader.test_input_pipeline([folder+file], args))
@@ -150,7 +150,7 @@ def compute_ed_el_scores(model, handles, names, iterators, el_mode):
 def train():
     training_dataset = create_training_pipelines(args)
 
-    ed_datasets, ed_names = create_el_ed_pipelines(gmonly_flag=True, filenames=args.ed_datasets, args=args)
+    ed_datasets, ed_names = create_el_ed_pipelines(filenames=args.ed_datasets, args=args)
 
     input_handle_ph = tf.placeholder(tf.string, shape=[], name="input_handle_ph")
     iterator = tf.contrib.data.Iterator.from_string_handle(
