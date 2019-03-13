@@ -21,7 +21,7 @@ def create_el_ed_pipelines(filenames, args):
     if filenames is None:
         return [], []
 
-    folder = config.base_folder + "data/tfrecords/" + args.experiment_name + "/gmonly/"
+    folder = config.base_folder + "data/tfrecords/" + args.experiment_name + "/gmonly_gt_mask/"
     test_datasets = []
     for file in filenames:
         test_datasets.append(reader.test_input_pipeline([folder+file], args))
