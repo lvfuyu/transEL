@@ -108,7 +108,7 @@ class Model(BaseModel):
             )
             self.entity_embeddings_placeholder = tf.placeholder(tf.float32, [self.nentities, 300])
             self.entity_embedding_init = _entity_embeddings.assign(self.entity_embeddings_placeholder)
-            _new_entity_embeddings = tf.stack([_entity_embeddings, _entity_default_embeddings])
+            _new_entity_embeddings = tf.concat([_entity_embeddings, _entity_default_embeddings])
 
             # for classification
             self.cand_entity_embeddings = tf.nn.embedding_lookup(_new_entity_embeddings, self.cand_entities,
