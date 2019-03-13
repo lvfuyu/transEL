@@ -37,11 +37,13 @@ class Model(BaseModel):
             self.cand_entities_len, self.ground_truth, self.ground_truth_len,\
             self.begin_gm, self.end_gm, self.mask_index, self.entities = next_element
 
-            # process
+            # type preprocess
             self.begin_span = tf.cast(self.begin_span, tf.int32)
             self.end_span = tf.cast(self.end_span, tf.int32)
             self.words_len = tf.cast(self.words_len, tf.int32)
             self.cand_entities_labels = tf.cast(self.cand_entities_labels, tf.float32)
+            self.mask_index = tf.cast(self.mask_index, tf.int32)
+
             # slice cand entities of mask index
             # shape = [batch_size, max number of cand entitites]
             self.cand_entities = self.extract_axis_1(self.cand_entities, self.mask_index)
