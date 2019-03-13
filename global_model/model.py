@@ -173,6 +173,7 @@ class Model(BaseModel):
         self.add_embeddings_op()
         self.add_context_tr_emb_op()
         self.add_span_emb_op()
+        self.add_final_score_op()
         if self.args.running_mode.startswith("train"):
             self.add_loss_op()
             # Generic functions that add training op
