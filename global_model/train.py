@@ -407,8 +407,8 @@ def _parse_args():
 
     if os.path.exists(args.output_folder) and not args.continue_training:
         print("!!!!!!!!!!!!!!\n"
-              "experiment: ", args.output_folder, "already exists and args.continue_training=False."
-                            "folder will be deleted in 20 seconds. Press CTRL+C to prevent it.")
+              "experiment: ", args.output_folder, "already exists and args.continue_training = False. "
+              "folder will be deleted in 20 seconds. Press CTRL+C to prevent it.")
         time.sleep(20)
         import shutil
         shutil.rmtree(args.output_folder)
