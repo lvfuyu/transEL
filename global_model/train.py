@@ -190,6 +190,7 @@ def train():
         termination_ed_score = 0
         nepoch_no_imprv = 0  # for early stopping
         train_step = 0
+        print("start training!")
         while True:
             total_train_loss = 0
             # for training based on training steps
@@ -201,6 +202,8 @@ def train():
                                    feed_dict={input_handle_ph: training_handle, model.dropout: args.dropout,
                                               model.lr: model.args.lr})
                 total_train_loss += loss
+                if train_step % 100 == 0:
+                    print("train_step = ", train_step, ", train_loss = ", loss)
 
             args.eval_cnt += 1
             summary = tf.Summary(value=[tf.Summary.Value(tag="total_train_loss", simple_value=total_train_loss)])
@@ -247,6 +250,7 @@ def train():
                     print("- early stopping {} epochs without improvement".format(nepoch_no_imprv))
                     terminate()
                     break
+        print("finish training!")
 
 
 def _parse_args():
