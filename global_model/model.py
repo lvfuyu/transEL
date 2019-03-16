@@ -148,7 +148,7 @@ class Model(BaseModel):
                 # shape = [batch, emb]
                 mention_start_emb = self.extract_axis_1(boundaries_input_vecs, self.begin_span)
                 mention_emb_list.append(mention_start_emb)
-                mention_end_emb = self.extract_axis_1(boundaries_input_vecs, self.end_span)
+                mention_end_emb = self.extract_axis_1(boundaries_input_vecs, self.end_span - 1)
                 mention_emb_list.append(mention_end_emb)
             # shape = [batch_size, 300]
             self.span_emb = util.projection(tf.concat(mention_emb_list, -1), 300)
