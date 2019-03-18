@@ -35,54 +35,6 @@ def tensorboard_writers(graph):
     return tf_writers
 
 
-def validation_loss_calculation(model, iterator, dataset_handle, opt_thr, el_mode, name=""):
-    # name is the name of the dataset e.g. aida_test.txt, aquaint.txt
-    # Run one pass over the validation dataset.
-    model.sess.run(iterator.initializer)
-    evaluator = Evaluator(opt_thr, name=name)
-    while True:
-        try:
-            retrieve_l = [model.final_scores, model.cand_entities_len, model.cand_entities,
-                          model.begin_span, model.end_span, model.spans_len,
-                          model.begin_gm, model.end_gm,
-                          model.ground_truth, model.ground_truth_len,
-                          model.words_len, model.chunk_id]
-            result_l = model.sess.run(
-                retrieve_l, feed_dict={model.input_handle_ph: dataset_handle, model.dropout: 1})
-            metrics_calculation(evaluator, *result_l, el_mode)
-
-        except tf.errors.OutOfRangeError:
-            print(name)
-            micro_f1, macro_f1 = evaluator.print_log_results(model.tf_writers, args.eval_cnt, el_mode)
-            break
-    return micro_f1, macro_f1
-
-
-def optimal_thr_calc(model, handles, iterators, el_mode):
-    val_datasets = args.el_val_datasets if el_mode else args.ed_val_datasets
-    tp_fp_scores_labels = []
-    fn_scores = []
-    for val_dataset in val_datasets:  # 1, 4
-        dataset_handle = handles[val_dataset]
-        iterator = iterators[val_dataset]
-        model.sess.run(iterator.initializer)
-        while True:
-            try:
-                retrieve_l = [model.final_scores, model.cand_entities_len, model.cand_entities,
-                              model.begin_span, model.end_span, model.spans_len,
-                              model.begin_gm, model.end_gm,
-                              model.ground_truth, model.ground_truth_len,
-                              model.words_len, model.chunk_id]
-                result_l = model.sess.run(
-                    retrieve_l, feed_dict={model.input_handle_ph: dataset_handle, model.dropout: 1})
-                tp_fp_batch, fn_batch = threshold_calculation(*result_l, el_mode)
-                tp_fp_scores_labels.extend(tp_fp_batch)
-                fn_scores.extend(fn_batch)
-            except tf.errors.OutOfRangeError:
-                break
-    return optimal_thr_calc_aux(tp_fp_scores_labels, fn_scores)
-
-
 def optimal_thr_calc_aux(tp_fp_scores_labels, fn_scores):
     # based on tp_fp_scores and fn_scores calculate optimal threshold
     tp_fp_scores_labels = sorted(tp_fp_scores_labels)   # low --> high
@@ -125,6 +77,105 @@ def optimal_thr_calc_aux(tp_fp_scores_labels, fn_scores):
     return best_thr, best_f1
 
 
+def validation(model, dataset_handle):
+    next_data = model.sess.run([model.next_data])
+    result_l = [next_data[9], next_data[11], next_data[8], next_data[5], next_data[6], next_data[7],
+                next_data[14], next_data[15], next_data[12], next_data[13], next_data[2], next_data[0]]
+
+    # batch_size = 1
+    begin_span = next_data[5][0],
+    end_span = next_data[6][0],
+    span_len = next_data[7]
+    entities = next_data[17]
+    default_mask = "484048_484048_484048"
+
+    for k in range(100):
+        flag = True
+        for i in range(span_len[0]):
+            mask_index = np.zeros(span_len)
+            mask_index[0] = i
+            mask_entities = np.copy(entities)
+            mask_entities[0][i] = default_mask
+            pred_scores, cand_entities_len, cand_entities = \
+                model.sess.run([model.final_scores, model.cand_entities_len, model.cand_entities],
+                               feed_dict={model.input_handle_ph: dataset_handle,
+                                          model.dropout: 1,
+                                          model.chunk_id: next_data[0],
+                                          model.words: next_data[1],
+                                          model.words_len: next_data[2],
+                                          model.chars: next_data[3],
+                                          model.chars_len: next_data[4],
+                                          model.begin_span: next_data[5],
+                                          model.end_span: next_data[6],
+                                          model.spans_len: next_data[7],
+                                          model.cand_entities: next_data[8],
+                                          model.cand_entities_scores: next_data[9],
+                                          model.cand_entities_labels: next_data[10],
+                                          model.cand_entities_len: next_data[11],
+                                          model.ground_truth: next_data[12],
+                                          model.ground_truth_len: next_data[13],
+                                          model.begin_gm: next_data[14],
+                                          model.end_gm: next_data[15],
+                                          model.mask_index: mask_index,
+                                          model.entities: mask_entities})
+            result_l[0][0][i] = pred_scores[0]
+            max_score = float('-inf')
+            top_1_entity = -1
+            for j in range(cand_entities_len[0]):
+                if max_score < pred_scores[0][j]:
+                    top_1_entity = cand_entities[0][j]
+                    max_score = pred_scores[0][j]
+            for m in range(begin_span[i], end_span[i]):
+                if entities[0][m] != str(top_1_entity):
+                    entities[0][m] = str(top_1_entity)
+                    flag = False
+        if flag:
+            break
+
+        if k == 0:
+            default_mask = "484048"
+            for i in range(len(entities[0])):
+                if entities[0][i] == "484048_484048_484048":
+                    entities[0][i] = default_mask
+
+    return result_l
+
+
+def validation_loss_calculation(model, iterator, dataset_handle, opt_thr, el_mode, name=""):
+    # name is the name of the dataset e.g. aida_test.txt, aquaint.txt
+    # Run one pass over the validation dataset.
+    model.sess.run(iterator.initializer)
+    evaluator = Evaluator(opt_thr, name=name)
+    while True:
+        try:
+            result_l = validation(model, dataset_handle)
+            metrics_calculation(evaluator, *result_l, el_mode)
+        except tf.errors.OutOfRangeError:
+            print(name)
+            micro_f1, macro_f1 = evaluator.print_log_results(model.tf_writers, args.eval_cnt, el_mode)
+            break
+    return micro_f1, macro_f1
+
+
+def optimal_thr_calc(model, handles, iterators, el_mode):
+    val_datasets = args.el_val_datasets if el_mode else args.ed_val_datasets
+    tp_fp_scores_labels = []
+    fn_scores = []
+    for val_dataset in val_datasets:  # 1, 4
+        dataset_handle = handles[val_dataset]
+        iterator = iterators[val_dataset]
+        model.sess.run(iterator.initializer)
+        while True:
+            try:
+                result_l = validation(model, dataset_handle)
+                tp_fp_batch, fn_batch = threshold_calculation(*result_l, el_mode)
+                tp_fp_scores_labels.extend(tp_fp_batch)
+                fn_scores.extend(fn_batch)
+            except tf.errors.OutOfRangeError:
+                break
+    return optimal_thr_calc_aux(tp_fp_scores_labels, fn_scores)
+
+
 def compute_ed_el_scores(model, handles, names, iterators, el_mode):
     # first compute the optimal threshold based on validation datasets.
     if args.hardcoded_thr:
@@ -147,22 +198,29 @@ def compute_ed_el_scores(model, handles, names, iterators, el_mode):
     return micro_results
 
 
+def ed_el_dataset_handles(datasets, sess):
+    test_iterators = []
+    test_handles = []
+    for dataset in datasets:
+        test_iterator = dataset.make_initializable_iterator()
+        test_iterators.append(test_iterator)
+        test_handles.append(sess.run(test_iterator.string_handle()))
+    return test_iterators, test_handles
+
+
 def train():
     training_dataset = create_training_pipelines(args)
-
     ed_datasets, ed_names = create_el_ed_pipelines(filenames=args.ed_datasets, args=args)
 
     input_handle_ph = tf.placeholder(tf.string, shape=[], name="input_handle_ph")
     iterator = tf.contrib.data.Iterator.from_string_handle(
         input_handle_ph, training_dataset.output_types, training_dataset.output_shapes)
     next_element = iterator.get_next()
-    # print(next_element)
 
     model = Model(args, next_element)
     model.build()
     # just for convenience so i can access it from everywhere
     model.input_handle_ph = input_handle_ph
-    # print(tf.global_variables())
 
     tf_writers = tensorboard_writers(model.sess.graph)
     model.tf_writers = tf_writers  # for accessing convenience
@@ -170,20 +228,9 @@ def train():
     # The `Iterator.string_handle()` method returns a tensor that can be evaluated
     # and used to feed the `handle` placeholder.
     with model.sess as sess:
-
-        def ed_el_dataset_handles(datasets):
-            test_iterators = []
-            test_handles = []
-            for dataset in datasets:
-                test_iterator = dataset.make_initializable_iterator()
-                test_iterators.append(test_iterator)
-                test_handles.append(sess.run(test_iterator.string_handle()))
-            return test_iterators, test_handles
-
         training_iterator = training_dataset.make_one_shot_iterator()
         training_handle = sess.run(training_iterator.string_handle())
-
-        ed_iterators, ed_handles = ed_el_dataset_handles(ed_datasets)
+        ed_iterators, ed_handles = ed_el_dataset_handles(ed_datasets, sess)
 
         # Loop forever, alternating between training and validation.
         best_ed_score = 0
@@ -193,14 +240,33 @@ def train():
         print("start training!")
         while True:
             total_train_loss = 0
-            # for training based on training steps
-            # for _ in range(args.steps_before_evaluation):
+
             wall_start = time.time()
             while ((time.time() - wall_start) / 60) <= args.evaluation_minutes:
                 train_step += 1
+                next_data = sess.run([model.next_data])
                 _, loss = sess.run([model.train_op, model.loss],
-                                   feed_dict={input_handle_ph: training_handle, model.dropout: args.dropout,
-                                              model.lr: model.args.lr})
+                                   feed_dict={input_handle_ph: training_handle,
+                                              model.dropout: args.dropout,
+                                              model.lr: model.args.lr,
+                                              model.chunk_id: next_data[0],
+                                              model.words: next_data[1],
+                                              model.words_len: next_data[2],
+                                              model.chars: next_data[3],
+                                              model.chars_len: next_data[4],
+                                              model.begin_span: next_data[5],
+                                              model.end_span: next_data[6],
+                                              model.spans_len: next_data[7],
+                                              model.cand_entities: next_data[8],
+                                              model.cand_entities_scores: next_data[9],
+                                              model.cand_entities_labels: next_data[10],
+                                              model.cand_entities_len: next_data[11],
+                                              model.ground_truth: next_data[12],
+                                              model.ground_truth_len: next_data[13],
+                                              model.begin_gm: next_data[14],
+                                              model.end_gm: next_data[15],
+                                              model.mask_index: next_data[16],
+                                              model.entities: next_data[17].astype(str)})
                 total_train_loss += loss
                 if train_step % 100 == 0:
                     print("train_step = ", train_step, ", train_loss = ", loss)

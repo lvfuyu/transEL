@@ -44,7 +44,6 @@ def parse_sequence_example(serialized):
 
 def parse_sequence_example_test(serialized):
     sequence_features = {
-            # in order to have a vector. if i put [1] it will probably be a matrix with just one column
             "words": tf.FixedLenSequenceFeature([], dtype=tf.int64),
             "chars": tf.VarLenFeature(tf.int64),
             "chars_len": tf.FixedLenSequenceFeature([], dtype=tf.int64),
@@ -77,8 +76,7 @@ def parse_sequence_example_test(serialized):
            tf.sparse_tensor_to_dense(sequence["cand_entities"]),\
            tf.sparse_tensor_to_dense(sequence["cand_entities_scores"]),\
            tf.sparse_tensor_to_dense(sequence["cand_entities_labels"]),\
-           sequence["cand_entities_len"],\
-           sequence["ground_truth"], context["ground_truth_len"],\
+           sequence["cand_entities_len"], sequence["ground_truth"], context["ground_truth_len"],\
            sequence["begin_gm"], sequence["end_gm"],\
            context["mask_index"], sequence["entities"]
 
@@ -95,5 +93,5 @@ def train_input_pipeline(filenames, args):
 def test_input_pipeline(filenames, args):
     dataset = tf.data.TFRecordDataset(filenames)
     dataset = dataset.map(parse_sequence_example_test)
-    dataset = dataset.padded_batch(args.batch_size, dataset.output_shapes)
+    dataset = dataset.padded_batch(1, dataset.output_shapes)
     return dataset
