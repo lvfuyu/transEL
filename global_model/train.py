@@ -266,7 +266,7 @@ def train():
                                               model.begin_gm: next_data[14],
                                               model.end_gm: next_data[15],
                                               model.mask_index: next_data[16],
-                                              model.entities: next_data[17].astype(str)})
+                                              model.entities: next_data[17]})
                 total_train_loss += loss
                 if train_step % 100 == 0:
                     print("train_step = ", train_step, ", train_loss = ", loss)
