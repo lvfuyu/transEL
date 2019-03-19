@@ -34,8 +34,6 @@ class Model(BaseModel):
             """Define placeholders = entries to computational graph"""
             self.dropout = tf.placeholder(dtype=tf.float32, shape=[], name="dropout")
             self.lr = tf.placeholder(dtype=tf.float32, shape=[], name="lr")
-            self.entity_embeddings_placeholder = tf.placeholder(tf.float32, [self.nentities, 300])
-            self.word_embeddings_placeholder = tf.placeholder(tf.float32, [self.nwords, 300])
 
             self.chunk_id = tf.placeholder(tf.string, [None], name="chunk_id")
             self.words = tf.placeholder(tf.int64, [None, None], name="words")
@@ -58,21 +56,22 @@ class Model(BaseModel):
 
             # slice candidate entities of mask index
             # shape = [batch_size, max number of cand entitites]
-            self.cand_entities = self.extract_axis_1(self.cand_entities, self.mask_index)
-            self.cand_entities_labels = self.extract_axis_1(self.cand_entities_labels, self.mask_index)
+            self.mask_cand_entities = self.extract_axis_1(self.cand_entities, self.mask_index)
+            self.mask_cand_entities_labels = self.extract_axis_1(self.cand_entities_labels, self.mask_index)
+            self.mask_cand_entities_labels = tf.cast(self.mask_cand_entities_labels, tf.float32)
             # shape = [batch_size]
-            self.cand_entities_len = self.extract_axis_1(self.cand_entities_len, self.mask_index)
-            self.begin_span = self.extract_axis_1(self.begin_span, self.mask_index)
-            self.end_span = self.extract_axis_1(self.end_span, self.mask_index)
+            self.mask_cand_entities_len = self.extract_axis_1(self.cand_entities_len, self.mask_index)
+            self.mask_begin_span = self.extract_axis_1(self.begin_span, self.mask_index)
+            self.mask_end_span = self.extract_axis_1(self.end_span, self.mask_index)
 
             # loss mask
-            self.loss_mask = tf.sequence_mask(self.cand_entities_len, tf.shape(self.cand_entities)[1], dtype=tf.float32)
+            self.loss_mask = tf.sequence_mask(self.mask_cand_entities_len, tf.shape(self.mask_cand_entities)[1], dtype=tf.float32)
 
             # split entities for ground truth and local predictions
-            self.entities = tf.string_split(tf.reshape(self.entities, [-1]), '_').values
+            self.mask_entities = tf.string_split(tf.reshape(self.entities, [-1]), '_').values
             # shape = [batch_size, word_length, 1/3]
-            self.entities = tf.reshape(self.entities, [tf.shape(self.words)[0], tf.shape(self.words)[1], -1])
-            self.entities = tf.string_to_number(self.entities, tf.int64)
+            self.mask_entities = tf.reshape(self.mask_entities, [tf.shape(self.words)[0], tf.shape(self.words)[1], -1])
+            self.mask_entities = tf.string_to_number(self.mask_entities, tf.int64)
 
         with tf.variable_scope("next_example"):
             self.next_data = next_element
@@ -84,7 +83,7 @@ class Model(BaseModel):
         :param ind: Indices to take (one for each element along axis 0 of data).
         :return: Subsetted tensor.
         """
-        batch_range = tf.range(tf.shape(data)[0], dtype=tf.int64)
+        batch_range = tf.range(tf.shape(data, out_type=tf.int64)[0], dtype=tf.int64)
         indices = tf.stack([batch_range, ind], axis=1)
         res = tf.gather_nd(data, indices)
         return res
@@ -108,6 +107,8 @@ class Model(BaseModel):
             _, id2word, _, id2char, _, _ = pickle.load(handle)
             nwords = len(id2word)
             nentities = len(load_wikiid2nnid(extension_name=self.args.entity_extension))
+            self.entity_embeddings_placeholder = tf.placeholder(tf.float32, [nentities, 300])
+            self.word_embeddings_placeholder = tf.placeholder(tf.float32, [nwords, 300])
 
         """Defines self.cand/entity_embeddings"""
         with tf.variable_scope("entity_embeddings"):
@@ -125,11 +126,9 @@ class Model(BaseModel):
             self.entity_embedding_init = _entity_embeddings.assign(self.entity_embeddings_placeholder)
             _new_entity_embeddings = tf.concat([_entity_embeddings, _entity_default_embeddings], axis=0)
             # for classification
-            self.cand_entity_embeddings = tf.nn.embedding_lookup(_new_entity_embeddings, self.cand_entities,
-                                                                 name="cand_entity_embeddings")
+            self.cand_entity_embeddings = tf.nn.embedding_lookup(_new_entity_embeddings, self.mask_cand_entities, name="cand_entity_embeddings")
             # input entity
-            entity_embeddings = tf.nn.embedding_lookup(_new_entity_embeddings, self.entities,
-                                                       name="entity_embeddings")
+            entity_embeddings = tf.nn.embedding_lookup(_new_entity_embeddings, self.mask_entities, name="entity_embeddings")
             entity_embeddings = tf.reduce_mean(entity_embeddings, axis=-2)
 
         """Defines self.word_embeddings"""
@@ -159,9 +158,9 @@ class Model(BaseModel):
             # the span embedding is modeled by g^m = [x_q; x_r]
             if self.args.span_emb.find("boundaries") != -1:
                 # shape = [batch, emb]
-                mention_start_emb = self.extract_axis_1(boundaries_input_vecs, self.begin_span)
+                mention_start_emb = self.extract_axis_1(boundaries_input_vecs, self.mask_begin_span)
                 mention_emb_list.append(mention_start_emb)
-                mention_end_emb = self.extract_axis_1(boundaries_input_vecs, self.end_span - 1)
+                mention_end_emb = self.extract_axis_1(boundaries_input_vecs, self.mask_end_span - 1)
                 mention_emb_list.append(mention_end_emb)
             # shape = [batch_size, 300]
             self.span_emb = util.projection(tf.concat(mention_emb_list, -1), 300)
@@ -175,8 +174,8 @@ class Model(BaseModel):
 
     def add_loss_op(self):
         with tf.variable_scope("loss"):
-            loss1 = self.cand_entities_labels * tf.nn.relu(self.args.gamma_thr - self.final_scores)
-            loss2 = (1 - self.cand_entities_labels) * tf.nn.relu(self.final_scores)
+            loss1 = self.mask_cand_entities_labels * tf.nn.relu(self.args.gamma_thr - self.final_scores)
+            loss2 = (1 - self.mask_cand_entities_labels) * tf.nn.relu(self.final_scores)
             loss = loss1 + loss2
             loss = self.loss_mask * loss
             self.loss = tf.reduce_sum(loss)

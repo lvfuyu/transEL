@@ -78,7 +78,8 @@ def optimal_thr_calc_aux(tp_fp_scores_labels, fn_scores):
 
 
 def validation(model, dataset_handle):
-    next_data = model.sess.run([model.next_data])
+    next_data = model.sess.run([model.next_data], feed_dict={model.input_handle_ph: dataset_handle})
+    next_data = next_data[0]
     result_l = [next_data[9], next_data[11], next_data[8], next_data[5], next_data[6], next_data[7],
                 next_data[14], next_data[15], next_data[12], next_data[13], next_data[2], next_data[0]]
 
@@ -98,8 +99,7 @@ def validation(model, dataset_handle):
             mask_entities[0][i] = default_mask
             pred_scores, cand_entities_len, cand_entities = \
                 model.sess.run([model.final_scores, model.cand_entities_len, model.cand_entities],
-                               feed_dict={model.input_handle_ph: dataset_handle,
-                                          model.dropout: 1,
+                               feed_dict={model.dropout: 1,
                                           model.chunk_id: next_data[0],
                                           model.words: next_data[1],
                                           model.words_len: next_data[2],
@@ -244,10 +244,10 @@ def train():
             wall_start = time.time()
             while ((time.time() - wall_start) / 60) <= args.evaluation_minutes:
                 train_step += 1
-                next_data = sess.run([model.next_data])
+                next_data = sess.run([model.next_data], feed_dict={input_handle_ph: training_handle})
+                next_data = next_data[0]
                 _, loss = sess.run([model.train_op, model.loss],
-                                   feed_dict={input_handle_ph: training_handle,
-                                              model.dropout: args.dropout,
+                                   feed_dict={model.dropout: args.dropout,
                                               model.lr: model.args.lr,
                                               model.chunk_id: next_data[0],
                                               model.words: next_data[1],
