@@ -43,16 +43,26 @@ def parse_sequence_example(serialized):
 
 
 def train_input_pipeline(filenames, args):
+    padding_values = tuple(["0", tf.cast(0, tf.int64), tf.cast(0, tf.int64), tf.cast(0, tf.int64), tf.cast(0, tf.int64),
+                            tf.cast(0, tf.int64), tf.cast(0, tf.int64), tf.cast(0, tf.int64), tf.cast(0, tf.int64),
+                            tf.cast(0, tf.float32), tf.cast(0, tf.int64), tf.cast(0, tf.int64), tf.cast(0, tf.int64),
+                            tf.cast(0, tf.int64), tf.cast(0, tf.int64), tf.cast(0, tf.int64), tf.cast(0, tf.int64),
+                            "484048"])
     dataset = tf.data.TFRecordDataset(filenames)
     dataset = dataset.map(parse_sequence_example)
     dataset = dataset.repeat()
     dataset = dataset.shuffle(buffer_size=args.shuffle_capacity)
-    dataset = dataset.padded_batch(args.batch_size, dataset.output_shapes)
+    dataset = dataset.padded_batch(args.batch_size, dataset.output_shapes, padding_values)
     return dataset
 
 
 def test_input_pipeline(filenames, args):
+    padding_values = tuple(["0", tf.cast(0, tf.int64), tf.cast(0, tf.int64), tf.cast(0, tf.int64), tf.cast(0, tf.int64),
+                            tf.cast(0, tf.int64), tf.cast(0, tf.int64), tf.cast(0, tf.int64), tf.cast(0, tf.int64),
+                            tf.cast(0, tf.float32), tf.cast(0, tf.int64), tf.cast(0, tf.int64), tf.cast(0, tf.int64),
+                            tf.cast(0, tf.int64), tf.cast(0, tf.int64), tf.cast(0, tf.int64), tf.cast(0, tf.int64),
+                            "484048_484048_484048"])
     dataset = tf.data.TFRecordDataset(filenames)
     dataset = dataset.map(parse_sequence_example)
-    dataset = dataset.padded_batch(1, dataset.output_shapes)
+    dataset = dataset.padded_batch(1, dataset.output_shapes, padding_values)
     return dataset

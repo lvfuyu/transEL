@@ -93,10 +93,11 @@ def validation(model, dataset_handle):
     for k in range(100):
         flag = True
         for i in range(span_len[0]):
-            mask_index = np.zeros(span_len)
-            mask_index[0] = i
+            mask_index = np.array([i])
             mask_entities = np.copy(entities)
             mask_entities[0][i] = default_mask
+            # print(mask_entities)
+            # print(next_data[1])
             pred_scores, cand_entities_len, cand_entities = \
                 model.sess.run([model.final_scores, model.cand_entities_len, model.cand_entities],
                                feed_dict={model.dropout: 1,
@@ -131,7 +132,7 @@ def validation(model, dataset_handle):
                     flag = False
         if flag:
             break
-
+        print("inference_iter_", k)
         if k == 0:
             default_mask = "484048"
             for i in range(len(entities[0])):
