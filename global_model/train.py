@@ -12,7 +12,8 @@ from global_model.model import Model
 
 
 def create_training_pipelines(args):
-    folder = config.base_folder + "data/tfrecords/" + args.experiment_name + "/gmonly_gt_mask/"
+    folder = config.base_folder + "data/tfrecords/" + args.experiment_name + \
+             "/gmonly_pre_mask/" if args.local_training else "/gmonly_gt_mask/"
     training_dataset = reader.train_input_pipeline([folder + file for file in args.train_datasets], args)
     return training_dataset
 
@@ -21,7 +22,8 @@ def create_el_ed_pipelines(filenames, args):
     if filenames is None:
         return [], []
 
-    folder = config.base_folder + "data/tfrecords/" + args.experiment_name + "/gmonly_gt_mask/"
+    folder = config.base_folder + "data/tfrecords/" + args.experiment_name + \
+             "/gmonly_pre_mask/" if args.local_training else "/gmonly_gt_mask/"
     test_datasets = []
     for file in filenames:
         test_datasets.append(reader.test_input_pipeline([folder+file], args))
@@ -88,7 +90,7 @@ def validation(model, dataset_handle):
     end_span = next_data[6][0],
     span_len = next_data[7]
     entities = next_data[17]
-    default_mask = "484048_484048_484048"
+    default_mask = "502661_502661_502661"
 
     for k in range(100):
         flag = True
@@ -134,9 +136,9 @@ def validation(model, dataset_handle):
             break
         print("inference_iter_", k)
         if k == 0:
-            default_mask = "484048"
+            default_mask = "502661"
             for i in range(len(entities[0])):
-                if entities[0][i] == "484048_484048_484048":
+                if entities[0][i] == "502661_502661_502661":
                     entities[0][i] = default_mask
 
     return result_l
@@ -396,9 +398,9 @@ def _parse_args():
     parser.add_argument("--comment", default="", help="put any comment here that describes your experiment"
                                                       ", for logging purposes only.")
 
-    parser.add_argument("--all_spans_training", type=bool, default=False)
+    parser.add_argument("--local_training", type=bool, default=False)
     parser.add_argument("--fast_evaluation", type=bool, default=False, help="if all_spans training then evaluate only"
-                                            "on el tests, corresponding if gm training evaluate only on ed tests.")
+                        "on el tests, corresponding if gm training evaluate only on ed tests.")
 
     parser.add_argument("--entity_extension", default=None, help="extension_entities or extension_entities_all etc")
 
@@ -439,9 +441,6 @@ def _parse_args():
 
     parser.add_argument("--cand_ent_num_restriction", type=int, default=None, help="for reducing memory usage and"
                         "avoiding OOM errors in big NN I can reduce the number of candidate ent for each span")
-    # --ed_datasets=  --el_datasets="aida_train.txt_z_aida_dev.txt"     which means i can leave something empty
-    # and i can also put "" in the cla
-
     parser.add_argument("--no_p_e_m_usage", type=bool, default=False, help="use similarity score instead of "
                                                                            "final score for prediction")
     parser.add_argument("--pem_without_log", type=bool, default=False)
@@ -451,9 +450,9 @@ def _parse_args():
     parser.add_argument("--gpem_without_log", type=bool, default=False)
     parser.add_argument("--gpem_buckets_boundaries", default=None,
                         help="example: 0.03_0.1_0.2_0.3_0.4_0.5_0.6_0.7_0.8_0.9_0.99")
-    parser.add_argument("--stage2_nn_components", default="local_global", help="each option is one scalar, then these are fed to"
-                                                                    "the final ffnn and we have the final score. choose any combination you want: e.g"
-                                                                    "pem_local_global, pem_global, local_global, global, etc")
+    parser.add_argument("--stage2_nn_components", default="local_global", help="each option is one scalar, "
+                        "then these are fed to the final ffnn and we have the final score. "
+                        "choose any combination you want: e.g pem_local_global, pem_global, local_global, global, etc")
     parser.add_argument("--ablations", type=bool, default=False)
     args = parser.parse_args()
 
@@ -461,7 +460,7 @@ def _parse_args():
         from datetime import datetime
         args.training_name = "{:%d_%m_%Y____%H_%M}".format(datetime.now())
 
-    temp = "all_spans_" if args.all_spans_training else ""
+    temp = "local_" if args.local_training else ""
     args.output_folder = config.base_folder+"data/tfrecords/" + \
                          args.experiment_name+"/{}training_folder/".format(temp)+\
                          args.training_name+"/"
@@ -470,7 +469,7 @@ def _parse_args():
         print("continue training...")
         train_args = load_train_args(args.output_folder, "train_continue")
         return train_args
-    args.running_mode = "train"                 # "evaluate"  "ensemble_eval"  "gerbil"
+    args.running_mode = "train"  # "evaluate"  "ensemble_eval"  "gerbil"
 
     if os.path.exists(args.output_folder) and not args.continue_training:
         print("!!!!!!!!!!!!!!\n"
@@ -511,11 +510,6 @@ def _parse_args():
     if args.gpem_buckets_boundaries:
         args.gpem_buckets_boundaries = [float(x) for x in args.gpem_buckets_boundaries.split('_')]
 
-    if args.fast_evaluation:
-        if args.all_spans_training:  # destined for el so omit the evaluation on ed
-            args.ed_datasets = None
-        else:
-            args.el_datasets = None
     return args
 
 
