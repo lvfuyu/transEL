@@ -13,7 +13,7 @@ from global_model.model import Model
 
 def create_training_pipelines(args):
     folder = config.base_folder + "data/tfrecords/" + args.experiment_name + \
-             ("/gmonly_pre_mask/" if args.local_training else "/gmonly_gt_mask/")
+             ("/gmonly_pre_mask/" if args.pre_training else "/gmonly_gt_mask/")
     training_dataset = reader.train_input_pipeline([folder + file for file in args.train_datasets], args)
     return training_dataset
 
@@ -23,7 +23,7 @@ def create_el_ed_pipelines(filenames, args):
         return [], []
 
     folder = config.base_folder + "data/tfrecords/" + args.experiment_name + \
-             ("/gmonly_pre_mask/" if args.local_training else "/gmonly_gt_mask/")
+             ("/gmonly_pre_mask/" if args.pre_training else "/gmonly_gt_mask/")
     test_datasets = []
     for file in filenames:
         test_datasets.append(reader.test_input_pipeline([folder+file], args))
@@ -398,9 +398,9 @@ def _parse_args():
     parser.add_argument("--comment", default="", help="put any comment here that describes your experiment"
                                                       ", for logging purposes only.")
 
-    parser.add_argument("--local_training", type=bool, default=False)
-    parser.add_argument("--fast_evaluation", type=bool, default=False, help="if all_spans training then evaluate only"
-                        "on el tests, corresponding if gm training evaluate only on ed tests.")
+    parser.add_argument("--pre_training", dest='pre_training', action='store_true')
+    parser.add_argument("--no_pre_training", dest='pre_training', action='store_false')
+    parser.set_defaults(pre_training=False)
 
     parser.add_argument("--entity_extension", default=None, help="extension_entities or extension_entities_all etc")
 
@@ -460,7 +460,7 @@ def _parse_args():
         from datetime import datetime
         args.training_name = "{:%d_%m_%Y____%H_%M}".format(datetime.now())
 
-    temp = "local_" if args.local_training else ""
+    temp = "local_" if args.pre_training else ""
     args.output_folder = config.base_folder+"data/tfrecords/" + \
                          args.experiment_name+"/{}training_folder/".format(temp)+\
                          args.training_name+"/"
