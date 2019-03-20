@@ -7,7 +7,7 @@ python3 -m global_model.train \
         --span_emb="boundaries" \
         --dropout=0.5 \
         --entity_extension=extension_entities \
-        --pre_training=False \
+        --no_pre_training \
         --train_datasets=aida_train \
         --ed_datasets=aida_dev_z_aida_test_z_aida_train --ed_val_datasets=0
 done
