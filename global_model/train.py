@@ -86,22 +86,33 @@ def validation(model, dataset_handle):
                 next_data[14], next_data[15], next_data[12], next_data[13], next_data[2], next_data[0]]
 
     # batch_size = 1
-    begin_span = next_data[5][0],
-    end_span = next_data[6][0],
-    span_len = next_data[7]
+    begin_span = np.array(next_data[5])
+    end_span = np.array(next_data[6])
+    span_len = next_data[7][0]
     entities = next_data[17]
     default_mask = "502661_502661_502661"
+    # print(entities)
+    # print(span_len)
+    # print(begin_span)
+    # print(end_span)
+    # print(np.array(begin_span))
+    # print(np.array(end_span))
+    # print(result_l[0][0])
+    # print(next_data[1])
 
-    for k in range(100):
+    for k in range(10):
+        # print(k)
+        entities_tmp = np.copy(entities)
         flag = True
-        for i in range(span_len[0]):
+        for i in range(span_len):
             mask_index = np.array([i])
-            mask_entities = np.copy(entities)
-            mask_entities[0][i] = default_mask
+            mask_entities = np.copy(entities_tmp)
+            for j in range(begin_span[0][i], end_span[0][i]):
+                mask_entities[0][j] = default_mask
             # print(mask_entities)
-            # print(next_data[1])
+
             pred_scores, cand_entities_len, cand_entities = \
-                model.sess.run([model.final_scores, model.cand_entities_len, model.cand_entities],
+                model.sess.run([model.final_scores, model.mask_cand_entities_len, model.mask_cand_entities],
                                feed_dict={model.dropout: 1,
                                           model.chunk_id: next_data[0],
                                           model.words: next_data[1],
@@ -122,23 +133,29 @@ def validation(model, dataset_handle):
                                           model.mask_index: mask_index,
                                           model.entities: mask_entities})
             result_l[0][0][i] = pred_scores[0]
+
             max_score = float('-inf')
             top_1_entity = -1
             for j in range(cand_entities_len[0]):
                 if max_score < pred_scores[0][j]:
                     top_1_entity = cand_entities[0][j]
                     max_score = pred_scores[0][j]
-            for m in range(begin_span[i], end_span[i]):
-                if entities[0][m] != str(top_1_entity):
-                    entities[0][m] = str(top_1_entity)
+
+            # print(begin_span[i])
+            # print(end_span[i])
+            for j in range(begin_span[0][i], end_span[0][i]):
+                if str(entities[0][j]) != str(top_1_entity):
+                    entities[0][j] = str(top_1_entity)
                     flag = False
+
+        print(next_data[0], "inference_iter:", k)
         if flag:
             break
-        print("inference_iter_", k)
+
         if k == 0:
             default_mask = "502661"
             for i in range(len(entities[0])):
-                if entities[0][i] == "502661_502661_502661":
+                if entities[0][i] == b'502661_502661_502661':
                     entities[0][i] = default_mask
 
     return result_l

@@ -99,3 +99,4 @@
 #            sequence["cand_entities_len"], sequence["ground_truth"], context["ground_truth_len"],\
 #            sequence["begin_gm"], sequence["end_gm"],\
 #            context["mask_index"], sequence["entities"]
+# print(len(entities[0]))
