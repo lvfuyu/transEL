@@ -9,5 +9,5 @@ python3 -m global_model.train \
         --entity_extension=extension_entities \
         --no_pre_training \
         --train_datasets=aida_train \
-        --ed_datasets=aida_dev_z_aida_test_z_aida_train --ed_val_datasets=0
+        --ed_datasets=aida_dev_z_aida_test --ed_val_datasets=0
 done
