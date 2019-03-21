@@ -151,7 +151,7 @@ def validation(model, dataset_handle):
                     entities[0][j] = str(top_1_entity)
                     flag = False
 
-        print(next_data[0], "inference_iter:", k)
+        # print(next_data[0], "inference_iter:", k)
         if flag:
             break
 
