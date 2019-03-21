@@ -34,6 +34,9 @@ def create_el_ed_pipelines(filenames, args):
 def tensorboard_writers(graph):
     tf_writers = dict()
     tf_writers["train"] = tf.summary.FileWriter(args.summaries_folder + 'train/', graph)
+    tf_writers["ed_pr"] = tf.summary.FileWriter(args.summaries_folder + 'ed_pr/')
+    tf_writers["ed_re"] = tf.summary.FileWriter(args.summaries_folder + 'ed_re/')
+    tf_writers["ed_f1"] = tf.summary.FileWriter(args.summaries_folder + 'ed_f1/')
     return tf_writers
 
 
