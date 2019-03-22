@@ -181,7 +181,7 @@ def validation_loss_calculation(model, iterator, dataset_handle, opt_thr, el_mod
 
 
 def optimal_thr_calc(model, handles, iterators, el_mode):
-    val_datasets = args.el_val_datasets if el_mode else args.ed_val_datasets
+    val_datasets = args.ed_val_datasets
     tp_fp_scores_labels = []
     fn_scores = []
     for val_dataset in val_datasets:  # 1, 4
@@ -210,8 +210,8 @@ def compute_ed_el_scores(model, handles, names, iterators, el_mode):
     micro_results = [val_f1]
     macro_results = []
     # for test_handle, test_name, test_it in zip(handles, names, iterators):
-    val_datasets = args.el_val_datasets if el_mode else args.ed_val_datasets
-    for i in [val_datasets + 1]:
+    test_datasets = args.ed_test_datasets
+    for i in test_datasets:
         test_it = iterators[i]
         test_handle = handles[i]
         test_name = names[i]
@@ -403,11 +403,11 @@ def _parse_args():
     parser.add_argument("--checkpoints_num", type=int, default=1, help="maximum number of checkpoints to keep")
 
     parser.add_argument("--ed_datasets", default="")
-    parser.add_argument("--ed_val_datasets", default="1", help="based on these datasets pick the optimal"
+    parser.add_argument("--ed_val_datasets", default="0", help="based on these datasets pick the optimal"
                                                                "gamma thr and also consider early stopping")
-    # --ed_val_datasets=1_4  # aida_dev, aquaint
+    parser.add_argument("--ed_test_datasets", default="1")
+
     parser.add_argument("--el_datasets", default="")
-    parser.add_argument("--el_val_datasets", default="1")  # --el_val_datasets=1_4  # aida_dev, aquaint
 
     parser.add_argument("--train_datasets", default="aida_train.txt")
     # --train_datasets=aida_train.txt_z_wikidumpRLTD.txt
@@ -521,7 +521,7 @@ def _parse_args():
     args.train_datasets = args.train_datasets.split('_z_') if args.train_datasets != "" else None
 
     args.ed_val_datasets = [int(x) for x in args.ed_val_datasets.split('_')]
-    args.el_val_datasets = [int(x) for x in args.el_val_datasets.split('_')]
+    args.ed_test_datasets = [int(x) for x in args.ed_test_datasets.split('_')]
 
     args.span_emb_ffnn = [int(x) for x in args.span_emb_ffnn.split('_')]
     args.final_score_ffnn = [int(x) for x in args.final_score_ffnn.split('_')]
