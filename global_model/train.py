@@ -201,23 +201,28 @@ def optimal_thr_calc(model, handles, iterators, el_mode):
 
 def compute_ed_el_scores(model, handles, names, iterators, el_mode):
     # first compute the optimal threshold based on validation datasets.
+    val_f1 = 0
     if args.hardcoded_thr:
         opt_thr = args.hardcoded_thr
     else:
         opt_thr, val_f1 = optimal_thr_calc(model, handles, iterators, el_mode)
 
-    micro_results = []
+    micro_results = [val_f1]
     macro_results = []
-    for test_handle, test_name, test_it in zip(handles, names, iterators):
-        micro_f1, macro_f1 = validation_loss_calculation(model, test_it, test_handle,
-                                                         opt_thr, el_mode=el_mode, name=test_name)
+    # for test_handle, test_name, test_it in zip(handles, names, iterators):
+    val_datasets = args.el_val_datasets if el_mode else args.ed_val_datasets
+    for i in [val_datasets + 1]:
+        test_it = iterators[i]
+        test_handle = handles[i]
+        test_name = names[i]
+        micro_f1, macro_f1 = validation_loss_calculation(model, test_it, test_handle, opt_thr,
+                                                         el_mode=el_mode, name=test_name)
         micro_results.append(micro_f1)
         macro_results.append(macro_f1)
 
-    val_datasets = args.el_val_datasets if el_mode else args.ed_val_datasets
-    if not args.hardcoded_thr and len(val_datasets) == 1 and abs(micro_results[val_datasets[0]] - val_f1) > 0.1:
-        print("ASSERTION ERROR: optimal threshold f1 calculalation differs from normal"
-              "f1 calculation!!!!", val_f1, "  and ", micro_results[val_datasets[0]])
+    # if not args.hardcoded_thr and len(val_datasets) == 1 and abs(micro_results[val_datasets[0]] - val_f1) > 0.1:
+    #     print("ASSERTION ERROR: optimal threshold f1 calculalation differs from normal"
+    #           "f1 calculation!!!!", val_f1, "  and ", micro_results[val_datasets[0]])
     return micro_results
 
 
@@ -344,7 +349,7 @@ def train():
 
 def _parse_args():
     parser = argparse.ArgumentParser()
-    parser.add_argument("--experiment_name", default="alldatasets_perparagr", #"standard",
+    parser.add_argument("--experiment_name", default="alldatasets_perparagr",  # "standard",
                         help="under folder data/tfrecords/")
     parser.add_argument("--training_name", default=None,
                         help="under folder data/tfrecords/")
@@ -353,7 +358,7 @@ def _parse_args():
 
     parser.add_argument("--nepoch_no_imprv", type=int, default=5)
     parser.add_argument("--improvement_threshold", type=float, default=0.3, help="if improvement less than this then"
-                            "it is considered not significant and we have early stopping.")
+                        "it is considered not significant and we have early stopping.")
     parser.add_argument("--clip", type=int, default=-1, help="if negative then no clipping")
     parser.add_argument("--lr_decay", type=float, default=-1.0, help="if negative then no decay")
     parser.add_argument("--lr", type=float, default=0.001)
