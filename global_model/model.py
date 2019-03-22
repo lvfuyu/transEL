@@ -163,7 +163,7 @@ class Model(BaseModel):
                 mention_end_emb = self.extract_axis_1(boundaries_input_vecs, self.mask_end_span - 1)
                 mention_emb_list.append(mention_end_emb)
             # shape = [batch_size, 300]
-            self.span_emb = util.projection(tf.concat(mention_emb_list, -1), 300)
+            self.span_emb = tf.layers.dense(tf.concat(mention_emb_list, -1), 300)
 
     def add_final_score_op(self):
         with tf.variable_scope("final_score"):
