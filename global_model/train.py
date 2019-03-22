@@ -297,7 +297,7 @@ def train():
                                               model.entities: next_data[17]})
                 total_train_loss += loss
                 if train_step % 100 == 0:
-                    print("train_step = ", train_step, ", train_loss = ", loss)
+                    print("train_step =", train_step, "train_loss =", loss)
 
             args.eval_cnt += 1
             summary = tf.Summary(value=[tf.Summary.Value(tag="total_train_loss", simple_value=total_train_loss)])
