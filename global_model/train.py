@@ -304,8 +304,8 @@ def train():
             tf_writers["train"].add_summary(summary, args.eval_cnt)
 
             print("args.eval_cnt = ", args.eval_cnt)
-            summary = sess.run(model.merged_summary_op)
-            tf_writers["train"].add_summary(summary, args.eval_cnt)
+            # summary = sess.run(model.merged_summary_op)
+            # tf_writers["train"].add_summary(summary, args.eval_cnt)
 
             wall_start = time.time()
             comparison_ed_score = -0.1
