@@ -100,3 +100,6 @@
 #            sequence["begin_gm"], sequence["end_gm"],\
 #            context["mask_index"], sequence["entities"]
 # print(len(entities[0]))
+
+#--no_pre_training \
+# --training_name=group_global/global_trans_1_4_model_v$v \
