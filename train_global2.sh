@@ -1,6 +1,6 @@
 for v in 1
 do
-UDA_VISIBLE_DEVICES="" python3 -m global_model.train \
+UDA_VISIBLE_DEVICES="-1" python3 -m global_model.train \
         --batch_size=4 --experiment_name=corefmerge \
         --training_name=group_global/global_trans_1_4_model_v$v \
         --evaluation_minutes=1 --nepoch_no_imprv=6 \
