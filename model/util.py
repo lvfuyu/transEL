@@ -136,7 +136,7 @@ def load_train_args(output_folder, running_mode):
     if not hasattr(train_args, 'model_heads_from_bilstm'):
         train_args.model_heads_from_bilstm = False
     if not hasattr(train_args, 'zero'):
-        train_args.zero = 1e-3  # for compatibility with old experiments
+        train_args.zero = 1e-3  # for compatibility with old results
     if not hasattr(train_args, 'attention_use_AB'):
         train_args.attention_use_AB = False
     if not hasattr(train_args, 'attention_on_lstm'):

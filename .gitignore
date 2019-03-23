@@ -97,6 +97,7 @@ ENV/
 #testmodel/
 .DS_Store
 #*.tar.gz
-
+data/
+results/
 #log
 *_log
