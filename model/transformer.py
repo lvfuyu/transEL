@@ -47,7 +47,8 @@ class Transformer:
         outputs = tf.expand_dims(outputs, 0)     # (1, T_q)
         outputs = tf.tile(outputs, [tf.shape(inputs)[0], 1])  # (N, T_q)
         with tf.variable_scope("embeddings") as scope:
-            pos_embedding = tf.get_variable(name="pos_embedding", shape=[max_length, num_units], dtype=tf.float32)
+            with tf.device("/cpu:0"):
+                pos_embedding = tf.get_variable(name="pos_embedding", shape=[max_length, num_units], dtype=tf.float32)
             encoded = tf.nn.embedding_lookup(pos_embedding, outputs)
         return encoded
 

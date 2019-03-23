@@ -112,17 +112,18 @@ class Model(BaseModel):
 
         """Defines self.cand/entity_embeddings"""
         with tf.variable_scope("entity_embeddings"):
-            _entity_embeddings = tf.Variable(
-                tf.constant(0.0, shape=[nentities, 300]),
-                name="_entity_embeddings",
-                dtype=tf.float32,
-                trainable=self.args.train_ent_vecs)
-            _entity_default_embeddings = tf.Variable(
-                tf.constant(0.0, shape=[1, 300]),
-                name="_entity_default_embeddings",
-                dtype=tf.float32,
-                trainable=self.args.train_ent_vecs
-            )
+            with tf.device("/cpu:0"):
+                _entity_embeddings = tf.Variable(
+                    tf.constant(0.0, shape=[nentities, 300]),
+                    name="_entity_embeddings",
+                    dtype=tf.float32,
+                    trainable=self.args.train_ent_vecs)
+                _entity_default_embeddings = tf.Variable(
+                    tf.constant(0.0, shape=[1, 300]),
+                    name="_entity_default_embeddings",
+                    dtype=tf.float32,
+                    trainable=self.args.train_ent_vecs
+                )
             self.entity_embedding_init = _entity_embeddings.assign(self.entity_embeddings_placeholder)
             _new_entity_embeddings = tf.concat([_entity_embeddings, _entity_default_embeddings], axis=0)
             # for classification
@@ -133,11 +134,12 @@ class Model(BaseModel):
 
         """Defines self.word_embeddings"""
         with tf.variable_scope("word_embeddings"):
-            _word_embeddings = tf.Variable(
-                tf.constant(0.0, shape=[nwords, 300]),
-                name="_word_embeddings",
-                dtype=tf.float32,
-                trainable=False)
+            with tf.device("/cpu:0"):
+                _word_embeddings = tf.Variable(
+                    tf.constant(0.0, shape=[nwords, 300]),
+                    name="_word_embeddings",
+                    dtype=tf.float32,
+                    trainable=False)
             self.word_embedding_init = _word_embeddings.assign(self.word_embeddings_placeholder)
             word_embeddings = tf.nn.embedding_lookup(_word_embeddings, self.words, name="word_embeddings")
             self.word_embeddings = word_embeddings + entity_embeddings
