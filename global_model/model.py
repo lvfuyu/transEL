@@ -167,8 +167,9 @@ class Model(BaseModel):
 
     def add_final_score_op(self):
         with tf.variable_scope("final_score"):
+            pred_entity_emb = tf.nn.l2_normalize(self.span_emb, dim=-1)
             # [batch_size, 1, 300] * [batch_size, #cands, 300]
-            scores = tf.matmul(tf.expand_dims(self.span_emb, 1), self.cand_entity_embeddings, transpose_b=True)
+            scores = tf.matmul(tf.expand_dims(pred_entity_emb, 1), self.cand_entity_embeddings, transpose_b=True)
             # [batch_size, #cands]
             self.final_scores = tf.squeeze(scores, axis=1)
 
