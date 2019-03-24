@@ -53,6 +53,7 @@ class Model(BaseModel):
             self.end_gm = tf.placeholder(tf.int64, [None, None], name="end_gm")
             self.mask_index = tf.placeholder(tf.int64, [None], name="mask_index")
             self.entities = tf.placeholder(tf.string, [None, None], name="entities")
+            self.local_entities = tf.placeholder(tf.string, [None], name="local_entities")
 
             # slice candidate entities of mask index
             # shape = [batch_size, max number of cand entitites]
@@ -68,10 +69,15 @@ class Model(BaseModel):
             self.loss_mask = tf.sequence_mask(self.mask_cand_entities_len, tf.shape(self.mask_cand_entities)[1], dtype=tf.float32)
 
             # split entities for ground truth and local predictions
-            self.mask_entities = tf.string_split(tf.reshape(self.entities, [-1]), '_').values
             # shape = [batch_size, word_length, 1/3]
+            self.mask_entities = tf.string_split(tf.reshape(self.entities, [-1]), '_').values
             self.mask_entities = tf.reshape(self.mask_entities, [tf.shape(self.words)[0], tf.shape(self.words)[1], -1])
             self.mask_entities = tf.string_to_number(self.mask_entities, tf.int64)
+            # local prediction entities
+            # shape = [batch_size, 3]
+            self.mask_local_entities = tf.string_split(tf.reshape(self.local_entities, [-1]), "_").values
+            self.mask_local_entities = tf.reshape(self.mask_local_entities, [tf.shape(self.words)[0], -1])
+            self.mask_local_entities = tf.string_to_number(self.mask_local_entities, tf.int64)
 
         with tf.variable_scope("next_example"):
             self.next_data = next_element
@@ -132,6 +138,9 @@ class Model(BaseModel):
             entity_embeddings = tf.nn.embedding_lookup(_new_entity_embeddings, self.mask_entities, name="entity_embeddings")
             entity_embeddings = tf.reduce_mean(entity_embeddings, axis=-2)
 
+            local_entity_embeddings = tf.nn.embedding_lookup(_new_entity_embeddings, self.mask_local_entities, name="local_entity_embeddings")
+            self.local_entity_embeddings = tf.reduce_mean(local_entity_embeddings, axis=-2)
+
         """Defines self.word_embeddings"""
         with tf.variable_scope("word_embeddings"):
             # with tf.device("/cpu:0"):
@@ -170,10 +179,15 @@ class Model(BaseModel):
     def add_final_score_op(self):
         with tf.variable_scope("final_score"):
             pred_entity_emb = tf.nn.l2_normalize(self.span_emb, dim=-1)
+            local_entity_emb = tf.nn.l2_normalize(self.local_entity_embeddings, dim=-1)
+
             # [batch_size, 1, 300] * [batch_size, #cands, 300]
             scores = tf.matmul(tf.expand_dims(pred_entity_emb, 1), self.cand_entity_embeddings, transpose_b=True)
+            local_scores = tf.matmul(tf.expand_dims(local_entity_emb, 1), self.cand_entity_embeddings, transpose_b=True)
+
             # [batch_size, #cands]
             self.final_scores = tf.squeeze(scores, axis=1)
+            self.local_scores = tf.squeeze(local_scores, axis=1)
 
     def add_loss_op(self):
         with tf.variable_scope("loss"):

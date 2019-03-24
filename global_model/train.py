@@ -93,6 +93,7 @@ def validation(model, dataset_handle):
     end_span = np.array(next_data[6])
     span_len = next_data[7][0]
     entities = next_data[17]
+    local_entities = np.copy(entities)
     default_mask = "502661_502661_502661"
     # print(entities)
     # print(span_len)
@@ -114,8 +115,9 @@ def validation(model, dataset_handle):
                 mask_entities[0][j] = default_mask
             # print(mask_entities)
 
-            pred_scores, cand_entities_len, cand_entities = \
-                model.sess.run([model.final_scores, model.mask_cand_entities_len, model.mask_cand_entities],
+            pred_scores, local_scores, cand_entities_len, cand_entities = \
+                model.sess.run([model.final_scores, model.local_scores,
+                                model.mask_cand_entities_len, model.mask_cand_entities],
                                feed_dict={model.dropout: 1,
                                           model.chunk_id: next_data[0],
                                           model.words: next_data[1],
@@ -134,8 +136,11 @@ def validation(model, dataset_handle):
                                           model.begin_gm: next_data[14],
                                           model.end_gm: next_data[15],
                                           model.mask_index: mask_index,
-                                          model.entities: mask_entities})
+                                          model.entities: mask_entities,
+                                          model.local_entities: np.array(local_entities[0][i])})
             result_l[0][0][i] = pred_scores[0]
+            if args.use_local:
+                result_l[0][0][i] = (result_l[0][0][i] + local_scores[0])/2
 
             max_score = float('-inf')
             top_1_entity = -1
@@ -151,9 +156,10 @@ def validation(model, dataset_handle):
                     entities[0][j] = str(top_1_entity)
                     flag = False
 
-        # print(next_data[0], "inference_iter:", k)
         if flag:
             break
+        if k == 9:
+            print(next_data[0], "inference_iter:", k)
 
         if k == 0:
             default_mask = "502661"
@@ -376,9 +382,10 @@ def _parse_args():
     parser.add_argument("--hidden_size_char", type=int, default=100, help="lstm on chars")
     parser.add_argument("--hidden_size_lstm", type=int, default=300, help="lstm on word embeddings")
 
-    parser.add_argument("--use_chars", dest="use_chars", action='store_true', help="use character embeddings or not")
-    parser.add_argument("--no_use_chars", dest="use_chars", action='store_false')
-    parser.set_defaults(use_chars=True)
+    parser.add_argument("--use_local", dest="use_local", action='store_true')
+    parser.add_argument("--no_use_local", dest="use_local", action='store_false')
+    parser.set_defaults(use_local=False)
+
     parser.add_argument("--model_heads_from_bilstm", type=bool, default=False,
                         help="use the bilstm vectors for the head instead of the word embeddings")
     parser.add_argument("--span_boundaries_from_wordemb", type=bool, default=False, help="instead of using the "
@@ -409,8 +416,7 @@ def _parse_args():
 
     parser.add_argument("--el_datasets", default="")
 
-    parser.add_argument("--train_datasets", default="aida_train.txt")
-    # --train_datasets=aida_train.txt_z_wikidumpRLTD.txt
+    parser.add_argument("--train_datasets", default="aida_train")
 
     parser.add_argument("--continue_training", type=bool, default=False,
                         help="if true then just restore the previous command line"
