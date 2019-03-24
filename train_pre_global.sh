@@ -11,5 +11,5 @@ python3 -m global_model.train \
         --use_local \
         --train_datasets=aida_train \
         --ed_datasets=aida_dev_z_aida_test --ed_val_datasets=0 --ed_test_datasets=1 \
-        --hardcoded_thr=0.01
+        --hardcoded_thr=-100
 done
