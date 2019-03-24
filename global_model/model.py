@@ -77,7 +77,7 @@ class Model(BaseModel):
             # shape = [batch_size, 3]
             self.mask_local_entities = tf.string_split(tf.reshape(self.local_entities, [-1]), "_").values
             self.mask_local_entities = tf.reshape(self.mask_local_entities, [tf.shape(self.words)[0], -1])
-            self.mask_local_entities = self.extract_axis_1(self.mask_local_entities, tf.zeros([tf.shape(self.words)[0]]))
+            self.mask_local_entities = self.extract_axis_1(self.mask_local_entities, tf.zeros([tf.shape(self.words)[0]], dtype=tf.int64))
             self.mask_local_entities = tf.reshape(self.mask_local_entities, [tf.shape(self.words)[0], 1])
             self.mask_local_entities = tf.string_to_number(self.mask_local_entities, tf.int64)
 
