@@ -156,10 +156,10 @@ def validation(model, dataset_handle):
                     entities[0][j] = str(top_1_entity)
                     flag = False
 
-        if flag:
-            break
         if k == 9:
             print(next_data[0], "inference_iter:", k)
+        if flag:
+            break
 
         if k == 0:
             default_mask = "502661"
