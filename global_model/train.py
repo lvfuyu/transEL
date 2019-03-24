@@ -114,7 +114,7 @@ def validation(model, dataset_handle):
             for j in range(begin_span[0][i], end_span[0][i]):
                 mask_entities[0][j] = default_mask
             # print(mask_entities)
-            print(np.array(local_entities[0][begin_span[0][i]]))
+            # print(np.array(local_entities[0][begin_span[0][i]]))
             pred_scores, local_scores, cand_entities_len, cand_entities = \
                 model.sess.run([model.final_scores, model.local_scores,
                                 model.mask_cand_entities_len, model.mask_cand_entities],
@@ -137,7 +137,7 @@ def validation(model, dataset_handle):
                                           model.end_gm: next_data[15],
                                           model.mask_index: mask_index,
                                           model.entities: mask_entities,
-                                          model.local_entities: np.array(local_entities[0][begin_span[0][i]])})
+                                          model.local_entities: np.array([local_entities[0][begin_span[0][i]]])})
             result_l[0][0][i] = pred_scores[0]
             if args.use_local:
                 result_l[0][0][i] = 0.2*result_l[0][0][i] + 0.8*local_scores[0]
