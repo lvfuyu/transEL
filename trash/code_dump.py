@@ -103,3 +103,4 @@
 
 #--no_pre_training \
 # --training_name=group_global/global_trans_1_4_model_v$v \
+# --hardcoded_thr=-100
