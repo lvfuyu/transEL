@@ -140,7 +140,7 @@ def validation(model, dataset_handle):
                                           model.local_entities: np.array([local_entities[0][begin_span[0][i]]])})
             result_l[0][0][i] = pred_scores[0]
             if args.use_local and args.eval_cnt > 12:
-                result_l[0][0][i] = 0.7*result_l[0][0][i] + 0.3*local_scores[0]
+                result_l[0][0][i] = 0.5*result_l[0][0][i] + 0.5*local_scores[0]
 
             max_score = float('-inf')
             top_1_entity = -1
