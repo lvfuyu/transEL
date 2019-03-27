@@ -8,7 +8,7 @@ python3 -m global_model.train \
         --dropout=0.5 \
         --entity_extension=extension_entities \
         --pre_training \
-        --no_use_local \
+        --use_local \
         --train_datasets=aida_train \
         --ed_datasets=aida_dev_z_aida_test --ed_val_datasets=0 --ed_test_datasets=1
 done

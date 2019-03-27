@@ -72,7 +72,10 @@ class Model(BaseModel):
             # shape = [batch_size, word_length, 1/3]
             self.mask_entities = tf.string_split(tf.reshape(self.entities, [-1]), '_').values
             self.mask_entities = tf.reshape(self.mask_entities, [tf.shape(self.words)[0], tf.shape(self.words)[1], -1])
+            self.mask_entities = self.extract_axis_1(self.mask_entities, tf.zeros([tf.shape(self.words)[0]], dtype=tf.int64), axis=2)
+            self.mask_entities = tf.reshape(self.mask_entities, [tf.shape(self.words)[0], tf.shape(self.words)[1], 1])
             self.mask_entities = tf.string_to_number(self.mask_entities, tf.int64)
+
             # local prediction entities
             # shape = [batch_size, 3]
             self.mask_local_entities = tf.string_split(tf.reshape(self.local_entities, [-1]), "_").values
@@ -84,7 +87,7 @@ class Model(BaseModel):
         with tf.variable_scope("next_example"):
             self.next_data = next_element
 
-    def extract_axis_1(self, data, ind):
+    def extract_axis_1(self, data, ind, axis=1):
         """
         Get specified elements along the first axis of tensor.
         :param data: Tensorflow tensor that will be subsetted.
@@ -92,7 +95,7 @@ class Model(BaseModel):
         :return: Subsetted tensor.
         """
         batch_range = tf.range(tf.shape(data, out_type=tf.int64)[0], dtype=tf.int64)
-        indices = tf.stack([batch_range, ind], axis=1)
+        indices = tf.stack([batch_range, ind], axis=axis)
         res = tf.gather_nd(data, indices)
         return res
 
