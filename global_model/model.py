@@ -195,6 +195,12 @@ class Model(BaseModel):
 
     def add_loss_op(self):
         with tf.variable_scope("loss"):
+            if self.args.use_local:
+                self.final_scores = tf.expand_dims(self.final_scores, axis=2)
+                self.local_scores = tf.expand_dims(self.local_scores, axis=2)
+                self.final_scores = tf.concat([self.final_scores, self.local_scores], axis=-1)
+                self.final_scores = tf.layers.dense(self.final_scores, 1)
+                self.final_scores = tf.squeeze(self.final_scores, -1)
             loss1 = self.mask_cand_entities_labels * tf.nn.relu(self.args.gamma_thr - self.final_scores)
             loss2 = (1 - self.mask_cand_entities_labels) * tf.nn.relu(self.final_scores)
             loss = loss1 + loss2
