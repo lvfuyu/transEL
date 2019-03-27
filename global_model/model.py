@@ -88,11 +88,8 @@ class Model(BaseModel):
             self.next_data = next_element
 
     def extract_axis_2(self, data, ind):
-        batch_range = tf.range(tf.shape(data, out_type=tf.int64)[0], dtype=tf.int64)
-        batch_ind = tf.tile(tf.expand_dims(batch_range, axis=-1), [1, tf.shape(data)[1]])
-        ind = tf.reshape(ind, [-1, 1])
-        indices = tf.stack([batch_ind, ind], axis=2)
-        res = tf.gather_nd(data, indices)
+        data_t = tf.transpose(data, [0, 2, 1])
+        res = self.extract_axis_1(data_t, ind)
         return res
 
     def extract_axis_1(self, data, ind):
