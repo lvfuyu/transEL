@@ -244,7 +244,7 @@ def ed_el_dataset_handles(datasets, sess):
 
 def train():
     training_dataset = create_training_pipelines(args)
-    ed_datasets, ed_names = create_el_ed_pipelines(filenames=args.ed_datasets, args=args)
+    # ed_datasets, ed_names = create_el_ed_pipelines(filenames=args.ed_datasets, args=args)
 
     input_handle_ph = tf.placeholder(tf.string, shape=[], name="input_handle_ph")
     iterator = tf.contrib.data.Iterator.from_string_handle(
@@ -264,7 +264,7 @@ def train():
     with model.sess as sess:
         training_iterator = training_dataset.make_one_shot_iterator()
         training_handle = sess.run(training_iterator.string_handle())
-        ed_iterators, ed_handles = ed_el_dataset_handles(ed_datasets, sess)
+        # ed_iterators, ed_handles = ed_el_dataset_handles(ed_datasets, sess)
 
         # Loop forever, alternating between training and validation.
         best_ed_score = 0
