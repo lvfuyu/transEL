@@ -26,7 +26,7 @@ def parse_sequence_example(serialized):
         "spans_len": tf.FixedLenFeature([], dtype=tf.int64),
         "ground_truth_len": tf.FixedLenFeature([], dtype=tf.int64),
         "mask_index": tf.FixedLenFeature([], dtype=tf.int64),
-        "mask_ent_id": tf.FixedLenFeature([], dtype=tf.string)
+        # "mask_ent_id": tf.FixedLenFeature([], dtype=tf.string)
     }
     # if train_or_test == "train":
     #     context_features.update({"mask_ent_id": tf.FixedLenFeature([], dtype=tf.string)})
@@ -43,7 +43,8 @@ def parse_sequence_example(serialized):
            tf.sparse_tensor_to_dense(sequence["cand_entities_labels"]),
            sequence["cand_entities_len"], sequence["ground_truth"],
            context["ground_truth_len"], sequence["begin_gm"], sequence["end_gm"],
-           context["mask_index"], sequence["entities"], context["mask_ent_id"]]
+           context["mask_index"], sequence["entities"]]
+           # context["mask_ent_id"]]
 
     # if train_or_test == "train":
     #     ret.append(context["mask_ent_id"])
@@ -61,7 +62,8 @@ def train_input_pipeline(filenames, args):
                             tf.cast(0, tf.int64), tf.cast(0, tf.int64), tf.cast(0, tf.int64), tf.cast(0, tf.int64),
                             tf.cast(0, tf.float32), tf.cast(0, tf.int64), tf.cast(0, tf.int64), tf.cast(0, tf.int64),
                             tf.cast(0, tf.int64), tf.cast(0, tf.int64), tf.cast(0, tf.int64), tf.cast(0, tf.int64),
-                            padding_entity, padding_entity])
+                            padding_entity])
+    # padding_entity
     dataset = tf.data.TFRecordDataset(filenames)
     dataset = dataset.map(parse_sequence_example)
     dataset = dataset.repeat()
