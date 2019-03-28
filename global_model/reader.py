@@ -27,9 +27,10 @@ def parse_sequence_example(serialized):
         "ground_truth_len": tf.FixedLenFeature([], dtype=tf.int64),
         "mask_index": tf.FixedLenFeature([], dtype=tf.int64)
     }
+    print(train_or_test)
     if train_or_test == "train":
         context_features.update({"mask_ent_id": tf.FixedLenFeature([], dtype=tf.string)})
-
+    print
     context, sequence = tf.parse_single_sequence_example(
         serialized,
         context_features=context_features,
