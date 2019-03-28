@@ -507,7 +507,7 @@ def _parse_args():
         print("!!!!!!!!!!!!!!\n"
               "experiment: ", args.output_folder, "already exists and args.continue_training = False. "
               "folder will be deleted in 20 seconds. Press CTRL+C to prevent it.")
-        time.sleep(20)
+        time.sleep(1)
         import shutil
         shutil.rmtree(args.output_folder)
 
