@@ -1,11 +1,8 @@
 import tensorflow as tf
 
-train_or_test = ""
-
 
 def parse_sequence_example(serialized):
     sequence_features = {
-            # in order to have a vector. if i put [1] it will probably be a matrix with just one column
             "words": tf.FixedLenSequenceFeature([], dtype=tf.int64),
             "chars": tf.VarLenFeature(tf.int64),
             "chars_len": tf.FixedLenSequenceFeature([], dtype=tf.int64),
@@ -26,10 +23,8 @@ def parse_sequence_example(serialized):
         "spans_len": tf.FixedLenFeature([], dtype=tf.int64),
         "ground_truth_len": tf.FixedLenFeature([], dtype=tf.int64),
         "mask_index": tf.FixedLenFeature([], dtype=tf.int64),
-        # "mask_ent_id": tf.FixedLenFeature([], dtype=tf.string)
+        "mask_ent_id": tf.FixedLenFeature([], dtype=tf.string)
     }
-    # if train_or_test == "train":
-    #     context_features.update({"mask_ent_id": tf.FixedLenFeature([], dtype=tf.string)})
     context, sequence = tf.parse_single_sequence_example(
         serialized,
         context_features=context_features,
@@ -43,18 +38,11 @@ def parse_sequence_example(serialized):
            tf.sparse_tensor_to_dense(sequence["cand_entities_labels"]),
            sequence["cand_entities_len"], sequence["ground_truth"],
            context["ground_truth_len"], sequence["begin_gm"], sequence["end_gm"],
-           context["mask_index"], sequence["entities"]]
-           # context["mask_ent_id"]]
-
-    # if train_or_test == "train":
-    #     ret.append(context["mask_ent_id"])
-
+           context["mask_index"], sequence["entities"], context["mask_ent_id"]]
     return ret
 
 
 def train_input_pipeline(filenames, args):
-    global train_or_test
-    train_or_test = "train"
     padding_entity = "502661"
     if args.pre_training:
         padding_entity = "502661_502661_502661"
@@ -62,8 +50,7 @@ def train_input_pipeline(filenames, args):
                             tf.cast(0, tf.int64), tf.cast(0, tf.int64), tf.cast(0, tf.int64), tf.cast(0, tf.int64),
                             tf.cast(0, tf.float32), tf.cast(0, tf.int64), tf.cast(0, tf.int64), tf.cast(0, tf.int64),
                             tf.cast(0, tf.int64), tf.cast(0, tf.int64), tf.cast(0, tf.int64), tf.cast(0, tf.int64),
-                            padding_entity])
-    # padding_entity
+                            padding_entity, "502661_502661_502661"])
     dataset = tf.data.TFRecordDataset(filenames)
     dataset = dataset.map(parse_sequence_example)
     dataset = dataset.repeat()
@@ -73,13 +60,11 @@ def train_input_pipeline(filenames, args):
 
 
 def test_input_pipeline(filenames, args):
-    global train_or_test
-    train_or_test = "test"
     padding_values = tuple(["0", tf.cast(0, tf.int64), tf.cast(0, tf.int64), tf.cast(0, tf.int64), tf.cast(0, tf.int64),
                             tf.cast(0, tf.int64), tf.cast(0, tf.int64), tf.cast(0, tf.int64), tf.cast(0, tf.int64),
                             tf.cast(0, tf.float32), tf.cast(0, tf.int64), tf.cast(0, tf.int64), tf.cast(0, tf.int64),
                             tf.cast(0, tf.int64), tf.cast(0, tf.int64), tf.cast(0, tf.int64), tf.cast(0, tf.int64),
-                            "502661_502661_502661"])
+                            "502661_502661_502661", "502661_502661_502661"])
     dataset = tf.data.TFRecordDataset(filenames)
     dataset = dataset.map(parse_sequence_example)
     dataset = dataset.padded_batch(1, dataset.output_shapes, padding_values)

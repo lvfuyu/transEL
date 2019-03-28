@@ -104,3 +104,32 @@
 #--no_pre_training \
 # --training_name=group_global/global_trans_1_4_model_v$v \
 # --hardcoded_thr=-100
+# in order to have a vector. if i put [1] it will probably be a matrix with just one column
+# summary = sess.run(model.merged_summary_op)
+            # tf_writers["train"].add_summary(summary, args.eval_cnt)
+# comparison_ed_score = (ed_scores[1] + ed_scores[4]) / 2   # aida_dev + acquaint
+            # comparison_score = ed_scores[1]  # aida_dev
+# if not args.hardcoded_thr and len(val_datasets) == 1 and abs(micro_results[val_datasets[0]] - val_f1) > 0.1:
+    #     print("ASSERTION ERROR: optimal threshold f1 calculalation differs from normal"
+    #           "f1 calculation!!!!", val_f1, "  and ", micro_results[val_datasets[0]])
+# for test_handle, test_name, test_it in zip(handles, names, iterators):
+# name is the name of the dataset e.g. aida_test.txt, aquaint.txt
+    # Run one pass over the validation dataset.
+# print(entities)
+    # print(span_len)
+    # print(begin_span)
+    # print(end_span)
+    # print(np.array(begin_span))
+    # print(np.array(end_span))
+    # print(result_l[0][0])
+    # print(next_data[1])
+# print(k)
+# print(mask_entities)
+# print(np.array(local_entities[0][begin_span[0][i]]))
+# if args.use_local and args.eval_cnt > 12:
+#     result_l[0][0][i] = 0.5*result_l[0][0][i] + 0.5*local_scores[0]
+# print(begin_span[i])
+# print(end_span[i])
+# just for convenience so i can access it from everywhere
+# The `Iterator.string_handle()` method returns a tensor that can be evaluated
+# and used to feed the `handle` placeholder.

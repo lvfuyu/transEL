@@ -95,17 +95,8 @@ def validation(model, dataset_handle):
     entities = next_data[17]
     local_entities = np.copy(entities)
     default_mask = "502661_502661_502661"
-    # print(entities)
-    # print(span_len)
-    # print(begin_span)
-    # print(end_span)
-    # print(np.array(begin_span))
-    # print(np.array(end_span))
-    # print(result_l[0][0])
-    # print(next_data[1])
 
     for k in range(10):
-        # print(k)
         entities_tmp = np.copy(entities)
         flag = True
         for i in range(span_len):
@@ -113,8 +104,7 @@ def validation(model, dataset_handle):
             mask_entities = np.copy(entities_tmp)
             for j in range(begin_span[0][i], end_span[0][i]):
                 mask_entities[0][j] = default_mask
-            # print(mask_entities)
-            # print(np.array(local_entities[0][begin_span[0][i]]))
+
             pred_scores, local_scores, cand_entities_len, cand_entities = \
                 model.sess.run([model.final_scores, model.local_scores,
                                 model.mask_cand_entities_len, model.mask_cand_entities],
@@ -139,8 +129,6 @@ def validation(model, dataset_handle):
                                           model.entities: mask_entities,
                                           model.local_entities: np.array([local_entities[0][begin_span[0][i]]])})
             result_l[0][0][i] = pred_scores[0]
-            # if args.use_local and args.eval_cnt > 12:
-            #     result_l[0][0][i] = 0.5*result_l[0][0][i] + 0.5*local_scores[0]
 
             max_score = float('-inf')
             top_1_entity = -1
@@ -149,8 +137,6 @@ def validation(model, dataset_handle):
                     top_1_entity = cand_entities[0][j]
                     max_score = pred_scores[0][j]
 
-            # print(begin_span[i])
-            # print(end_span[i])
             for j in range(begin_span[0][i], end_span[0][i]):
                 if str(entities[0][j]) != str(top_1_entity):
                     entities[0][j] = str(top_1_entity)
@@ -171,8 +157,6 @@ def validation(model, dataset_handle):
 
 
 def validation_loss_calculation(model, iterator, dataset_handle, opt_thr, el_mode, name=""):
-    # name is the name of the dataset e.g. aida_test.txt, aquaint.txt
-    # Run one pass over the validation dataset.
     model.sess.run(iterator.initializer)
     evaluator = Evaluator(opt_thr, name=name)
     while True:
@@ -215,7 +199,6 @@ def compute_ed_el_scores(model, handles, names, iterators, el_mode):
 
     micro_results = [val_f1]
     macro_results = []
-    # for test_handle, test_name, test_it in zip(handles, names, iterators):
     test_datasets = args.ed_test_datasets
     for i in test_datasets:
         test_it = iterators[i]
@@ -225,10 +208,6 @@ def compute_ed_el_scores(model, handles, names, iterators, el_mode):
                                                          el_mode=el_mode, name=test_name)
         micro_results.append(micro_f1)
         macro_results.append(macro_f1)
-
-    # if not args.hardcoded_thr and len(val_datasets) == 1 and abs(micro_results[val_datasets[0]] - val_f1) > 0.1:
-    #     print("ASSERTION ERROR: optimal threshold f1 calculalation differs from normal"
-    #           "f1 calculation!!!!", val_f1, "  and ", micro_results[val_datasets[0]])
     return micro_results
 
 
@@ -244,7 +223,7 @@ def ed_el_dataset_handles(datasets, sess):
 
 def train():
     training_dataset = create_training_pipelines(args)
-    # ed_datasets, ed_names = create_el_ed_pipelines(filenames=args.ed_datasets, args=args)
+    ed_datasets, ed_names = create_el_ed_pipelines(filenames=args.ed_datasets, args=args)
 
     input_handle_ph = tf.placeholder(tf.string, shape=[], name="input_handle_ph")
     iterator = tf.contrib.data.Iterator.from_string_handle(
@@ -253,18 +232,15 @@ def train():
 
     model = Model(args, next_element)
     model.build()
-    # just for convenience so i can access it from everywhere
     model.input_handle_ph = input_handle_ph
 
     tf_writers = tensorboard_writers(model.sess.graph)
     model.tf_writers = tf_writers  # for accessing convenience
 
-    # The `Iterator.string_handle()` method returns a tensor that can be evaluated
-    # and used to feed the `handle` placeholder.
     with model.sess as sess:
         training_iterator = training_dataset.make_one_shot_iterator()
         training_handle = sess.run(training_iterator.string_handle())
-        # ed_iterators, ed_handles = ed_el_dataset_handles(ed_datasets, sess)
+        ed_iterators, ed_handles = ed_el_dataset_handles(ed_datasets, sess)
 
         # Loop forever, alternating between training and validation.
         best_ed_score = 0
@@ -274,7 +250,6 @@ def train():
         print("start training!")
         while True:
             total_train_loss = 0
-
             wall_start = time.time()
             while ((time.time() - wall_start) / 60) <= args.evaluation_minutes:
                 train_step += 1
@@ -311,9 +286,6 @@ def train():
             tf_writers["train"].add_summary(summary, args.eval_cnt)
 
             print("args.eval_cnt = ", args.eval_cnt, flush=True)
-            # summary = sess.run(model.merged_summary_op)
-            # tf_writers["train"].add_summary(summary, args.eval_cnt)
-
             wall_start = time.time()
             comparison_ed_score = -0.1
             if ed_names:
@@ -322,8 +294,6 @@ def train():
                 comparison_ed_score = np.mean(np.array(ed_scores)[args.ed_val_datasets])
             print("Evaluation duration in minutes: ", (time.time() - wall_start) / 60)
 
-            # comparison_ed_score = (ed_scores[1] + ed_scores[4]) / 2   # aida_dev + acquaint
-            # comparison_score = ed_scores[1]  # aida_dev
             if model.args.lr_decay > 0:
                 model.args.lr *= model.args.lr_decay  # decay learning rate
             text = ""
