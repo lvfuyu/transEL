@@ -27,6 +27,7 @@ def parse_sequence_example(serialized):
             "spans_len": tf.FixedLenFeature([], dtype=tf.int64),
             "ground_truth_len": tf.FixedLenFeature([], dtype=tf.int64),
             "mask_index": tf.FixedLenFeature([], dtype=tf.int64),
+            "mask_ent_id": tf.FixedLenFeature([], dtype=tf.int64)
         },
         sequence_features=sequence_features)
 
@@ -39,7 +40,7 @@ def parse_sequence_example(serialized):
            sequence["cand_entities_len"],\
            sequence["ground_truth"], context["ground_truth_len"],\
            sequence["begin_gm"], sequence["end_gm"], \
-           context["mask_index"], sequence["entities"]
+           context["mask_index"], sequence["entities"], context["mask_ent_id"]
 
 
 def train_input_pipeline(filenames, args):
@@ -50,7 +51,7 @@ def train_input_pipeline(filenames, args):
                             tf.cast(0, tf.int64), tf.cast(0, tf.int64), tf.cast(0, tf.int64), tf.cast(0, tf.int64),
                             tf.cast(0, tf.float32), tf.cast(0, tf.int64), tf.cast(0, tf.int64), tf.cast(0, tf.int64),
                             tf.cast(0, tf.int64), tf.cast(0, tf.int64), tf.cast(0, tf.int64), tf.cast(0, tf.int64),
-                            padding_entity])
+                            padding_entity, tf.cast(0, tf.int64)])
     dataset = tf.data.TFRecordDataset(filenames)
     dataset = dataset.map(parse_sequence_example)
     dataset = dataset.repeat()
@@ -64,7 +65,7 @@ def test_input_pipeline(filenames, args):
                             tf.cast(0, tf.int64), tf.cast(0, tf.int64), tf.cast(0, tf.int64), tf.cast(0, tf.int64),
                             tf.cast(0, tf.float32), tf.cast(0, tf.int64), tf.cast(0, tf.int64), tf.cast(0, tf.int64),
                             tf.cast(0, tf.int64), tf.cast(0, tf.int64), tf.cast(0, tf.int64), tf.cast(0, tf.int64),
-                            "502661_502661_502661"])
+                            "502661_502661_502661", tf.cast(0, tf.int64)])
     dataset = tf.data.TFRecordDataset(filenames)
     dataset = dataset.map(parse_sequence_example)
     dataset = dataset.padded_batch(1, dataset.output_shapes, padding_values)
