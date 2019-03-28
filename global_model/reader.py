@@ -27,25 +27,27 @@ def parse_sequence_example(serialized):
         "ground_truth_len": tf.FixedLenFeature([], dtype=tf.int64),
         "mask_index": tf.FixedLenFeature([], dtype=tf.int64)
     }
-    print(train_or_test)
     if train_or_test == "train":
         context_features.update({"mask_ent_id": tf.FixedLenFeature([], dtype=tf.string)})
-    print
     context, sequence = tf.parse_single_sequence_example(
         serialized,
         context_features=context_features,
         sequence_features=sequence_features)
 
-    return context["chunk_id"], sequence["words"], context["words_len"],\
-           tf.sparse_tensor_to_dense(sequence["chars"]), sequence["chars_len"],\
-           sequence["begin_span"], sequence["end_span"], context["spans_len"],\
-           tf.sparse_tensor_to_dense(sequence["cand_entities"]),\
-           tf.sparse_tensor_to_dense(sequence["cand_entities_scores"]),\
-           tf.sparse_tensor_to_dense(sequence["cand_entities_labels"]),\
-           sequence["cand_entities_len"],\
-           sequence["ground_truth"], context["ground_truth_len"],\
-           sequence["begin_gm"], sequence["end_gm"], \
-           context["mask_index"], sequence["entities"], context["mask_ent_id"]
+    ret = [context["chunk_id"], sequence["words"], context["words_len"],
+           tf.sparse_tensor_to_dense(sequence["chars"]), sequence["chars_len"],
+           sequence["begin_span"], sequence["end_span"], context["spans_len"],
+           tf.sparse_tensor_to_dense(sequence["cand_entities"]),
+           tf.sparse_tensor_to_dense(sequence["cand_entities_scores"]),
+           tf.sparse_tensor_to_dense(sequence["cand_entities_labels"]),
+           sequence["cand_entities_len"], sequence["ground_truth"],
+           context["ground_truth_len"], sequence["begin_gm"], sequence["end_gm"],
+           context["mask_index"], sequence["entities"]]
+
+    if train_or_test == "train":
+        ret.append(context["mask_ent_id"])
+
+    return ret
 
 
 def train_input_pipeline(filenames, args):
