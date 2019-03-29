@@ -133,3 +133,5 @@
 # just for convenience so i can access it from everywhere
 # The `Iterator.string_handle()` method returns a tensor that can be evaluated
 # and used to feed the `handle` placeholder.
+# local_scores
+# , model.local_scores

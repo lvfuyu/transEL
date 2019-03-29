@@ -105,9 +105,8 @@ def validation(model, dataset_handle):
             for j in range(begin_span[0][i], end_span[0][i]):
                 mask_entities[0][j] = default_mask
 
-            pred_scores, local_scores, cand_entities_len, cand_entities = \
-                model.sess.run([model.final_scores, model.local_scores,
-                                model.mask_cand_entities_len, model.mask_cand_entities],
+            pred_scores, cand_entities_len, cand_entities = \
+                model.sess.run([model.final_scores, model.mask_cand_entities_len, model.mask_cand_entities],
                                feed_dict={model.dropout: 1,
                                           model.chunk_id: next_data[0],
                                           model.words: next_data[1],
