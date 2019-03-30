@@ -135,3 +135,13 @@
 # and used to feed the `handle` placeholder.
 # local_scores
 # , model.local_scores
+# local_entity_emb = tf.nn.l2_normalize(self.local_entity_embeddings, dim=-1)
+# local_scores = tf.matmul(tf.expand_dims(local_entity_emb, 1), self.cand_entity_embeddings, transpose_b=True)
+# self.local_scores = tf.squeeze(local_scores, axis=1)
+# if self.args.use_local:
+#     self.final_scores = tf.expand_dims(self.final_scores, axis=2)
+#     self.local_scores = tf.expand_dims(self.local_scores, axis=2)
+#     self.final_scores = tf.concat([self.final_scores, self.local_scores], axis=-1)
+#     self.final_scores = tf.layers.dense(self.final_scores, 1)
+#     self.final_scores = tf.squeeze(self.final_scores, -1)
+# pred_entity_emb = tf.layers.dense(pred_entity_emb, 300, tf.nn.relu)

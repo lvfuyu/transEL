@@ -178,34 +178,24 @@ class Model(BaseModel):
                 mention_end_emb = self.extract_axis_1(boundaries_input_vecs, self.mask_end_span - 1)
                 mention_emb_list.append(mention_end_emb)
             # shape = [batch_size, 300]
-            self.span_emb = tf.layers.dense(tf.concat(mention_emb_list, -1), 300)
+            self.span_emb = tf.layers.dense(tf.concat(mention_emb_list, -1), 300, tf.nn.tanh)
 
     def add_final_score_op(self):
         with tf.variable_scope("final_score"):
-            # pred_entity_emb = tf.nn.l2_normalize(self.span_emb, dim=-1)
-            # local_entity_emb = tf.nn.l2_normalize(self.local_entity_embeddings, dim=-1)
-
-            pred_entity_emb = tf.layers.dense(tf.concat([self.span_emb, self.local_entity_embeddings], axis=-1), 300, tf.nn.relu)
-            pred_entity_emb = tf.nn.dropout(pred_entity_emb, keep_prob=self.dropout)
-            pred_entity_emb = tf.layers.dense(pred_entity_emb, 300, tf.nn.relu)
-            pred_entity_emb = tf.nn.l2_normalize(pred_entity_emb, dim=-1)
+            if not self.args.use_local:
+                pred_entity_emb = tf.nn.l2_normalize(self.span_emb, dim=-1)
+            else:
+                pred_entity_emb = tf.layers.dense(tf.concat([self.span_emb, self.local_entity_embeddings], axis=-1), 300, tf.nn.relu)
+                # pred_entity_emb = tf.nn.dropout(pred_entity_emb, keep_prob=self.dropout)
+                pred_entity_emb = tf.nn.l2_normalize(pred_entity_emb, dim=-1)
 
             # [batch_size, 1, 300] * [batch_size, #cands, 300]
             scores = tf.matmul(tf.expand_dims(pred_entity_emb, 1), self.cand_entity_embeddings, transpose_b=True)
-            # local_scores = tf.matmul(tf.expand_dims(local_entity_emb, 1), self.cand_entity_embeddings, transpose_b=True)
-
             # [batch_size, #cands]
             self.final_scores = tf.squeeze(scores, axis=1)
-            # self.local_scores = tf.squeeze(local_scores, axis=1)
 
     def add_loss_op(self):
         with tf.variable_scope("loss"):
-            # if self.args.use_local:
-            #     self.final_scores = tf.expand_dims(self.final_scores, axis=2)
-            #     self.local_scores = tf.expand_dims(self.local_scores, axis=2)
-            #     self.final_scores = tf.concat([self.final_scores, self.local_scores], axis=-1)
-            #     self.final_scores = tf.layers.dense(self.final_scores, 1)
-            #     self.final_scores = tf.squeeze(self.final_scores, -1)
             loss1 = self.mask_cand_entities_labels * tf.nn.relu(self.args.gamma_thr - self.final_scores)
             loss2 = (1 - self.mask_cand_entities_labels) * tf.nn.relu(self.final_scores)
             loss = loss1 + loss2
