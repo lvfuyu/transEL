@@ -145,3 +145,4 @@
 #     self.final_scores = tf.layers.dense(self.final_scores, 1)
 #     self.final_scores = tf.squeeze(self.final_scores, -1)
 # pred_entity_emb = tf.layers.dense(pred_entity_emb, 300, tf.nn.relu)
+# pred_entity_emb = tf.nn.dropout(pred_entity_emb, keep_prob=self.dropout)
