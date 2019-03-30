@@ -178,16 +178,17 @@ class Model(BaseModel):
                 mention_end_emb = self.extract_axis_1(boundaries_input_vecs, self.mask_end_span - 1)
                 mention_emb_list.append(mention_end_emb)
             # shape = [batch_size, 300]
-            self.span_emb = tf.layers.dense(tf.concat(mention_emb_list, -1), 300, tf.nn.tanh)
+            self.span_emb = tf.layers.dense(tf.concat(mention_emb_list, -1), 300)
 
     def add_final_score_op(self):
         with tf.variable_scope("final_score"):
             if not self.args.use_local:
-                pred_entity_emb = tf.nn.l2_normalize(self.span_emb, dim=-1)
+                # pred_entity_emb = tf.nn.l2_normalize(self.span_emb, dim=-1)
+                pred_entity_emb = self.span_emb
             else:
-                pred_entity_emb = tf.layers.dense(tf.concat([self.span_emb, self.local_entity_embeddings], axis=-1), 300, tf.nn.relu)
+                pred_entity_emb = tf.layers.dense(tf.concat([self.span_emb, self.local_entity_embeddings], axis=-1), 300)
                 # pred_entity_emb = tf.nn.dropout(pred_entity_emb, keep_prob=self.dropout)
-                pred_entity_emb = tf.nn.l2_normalize(pred_entity_emb, dim=-1)
+                # pred_entity_emb = tf.nn.l2_normalize(pred_entity_emb, dim=-1)
 
             # [batch_size, 1, 300] * [batch_size, #cands, 300]
             scores = tf.matmul(tf.expand_dims(pred_entity_emb, 1), self.cand_entity_embeddings, transpose_b=True)
