@@ -179,7 +179,7 @@ class Model(BaseModel):
                 mention_emb_list.append(mention_end_emb)
             # shape = [batch_size, 300]
             self.span_emb = tf.layers.dense(tf.concat(mention_emb_list, -1), 300)
-            # self.span_emb = tf.nn.l2_normalize(self.span_emb, dim=-1)
+            self.span_emb = tf.nn.l2_normalize(self.span_emb, dim=-1)
 
     def add_final_score_op(self):
         with tf.variable_scope("final_score"):
@@ -187,7 +187,7 @@ class Model(BaseModel):
                 pred_entity_emb = self.span_emb
             else:
                 pred_entity_emb = tf.layers.dense(tf.concat([self.span_emb, self.local_entity_embeddings], axis=-1), 300)
-                # pred_entity_emb = tf.nn.l2_normalize(pred_entity_emb, dim=-1)
+                pred_entity_emb = tf.nn.l2_normalize(pred_entity_emb, dim=-1)
 
             # [batch_size, 1, 300] * [batch_size, #cands, 300]
             scores = tf.matmul(tf.expand_dims(pred_entity_emb, 1), self.cand_entity_embeddings, transpose_b=True)
