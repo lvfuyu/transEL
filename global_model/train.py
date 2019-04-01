@@ -168,7 +168,7 @@ def validation(model, dataset_handle):
     entities = next_data[17]
     local_entities = np.copy(entities)
 
-    for k in range(10):
+    for k in range(50):
         entities_tmp = np.copy(entities)
         flag = True
         for i in range(span_len):
@@ -211,7 +211,7 @@ def validation(model, dataset_handle):
                     entities[0][j] = str(top_1_entity)
                     flag = False
 
-        if k == 9:
+        if k > 9:
             print(next_data[0], "inference_iter:", k)
         if flag:
             break
