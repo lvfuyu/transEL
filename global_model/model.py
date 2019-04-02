@@ -12,29 +12,10 @@ class Model(BaseModel):
 
     def __init__(self, args, next_element):
         super().__init__(args)
-        """
-        self.words:  tf.int64, shape=[None, None]  # shape = (batch size, max length of sentence in batch)
-        self.words_len: tf.int64, shape=[None],  # shape = (batch size)
-        self.chars: tf.int64, shape=[None, None, None],  # shape = (batch size, max length of sentence, max length of word)
-        self.chars_len: tf.int64, shape=[None, None],  # shape = (batch_size, max_length of sentence)
-        self.begin_span: tf.int64, shape=[None, None],  # shape = (batch_size, max number of candidate spans in one of the batch sentences)
-        self.end_span: tf.int64, shape=[None, None],
-        self.spans_len: tf.int64, shape=[None],  # shape = (batch size)
-        self.cand_entities: tf.int64, shape=[None, None, None],  # shape = (batch size, max number of candidate spans, max number of cand entitites)
-        self.cand_entities_scores: tf.float32, shape=[None, None, None],
-        self.cand_entities_labels: tf.int64, shape=[None, None, None], 
-        self.cand_entities_len: tf.int64, shape=[None, None],  # shape = (batch_size, max number of candidate spans)
-        self.ground_truth: tf.int64, shape=[None, None],  # shape = (batch_size, max number of candidate spans)
-        self.ground_truth_len: tf.int64, shape=[None],  # shape = (batch_size)
-        self.begin_gm: tf.int64, shape=[None, None],  # shape = (batch_size, max number of gold mentions)
-        self.end_gm = tf.int64, shape=[None, None],
-        self.mask_index = tf.int64 shape=[None]  # shape = (batch_size)
-        """
         with tf.variable_scope("input_fn"):
             """Define placeholders = entries to computational graph"""
             self.dropout = tf.placeholder(dtype=tf.float32, shape=[], name="dropout")
             self.lr = tf.placeholder(dtype=tf.float32, shape=[], name="lr")
-
             self.chunk_id = tf.placeholder(tf.string, [None], name="chunk_id")
             self.words = tf.placeholder(tf.int64, [None, None], name="words")
             self.words_len = tf.placeholder(tf.int64, [None], name="words_len")
@@ -53,36 +34,27 @@ class Model(BaseModel):
             self.end_gm = tf.placeholder(tf.int64, [None, None], name="end_gm")
             self.mask_index = tf.placeholder(tf.int64, [None], name="mask_index")
             self.entities = tf.placeholder(tf.string, [None, None], name="entities")
-            self.local_entities = tf.placeholder(tf.string, [None], name="local_entities")
+            self.cand_local_scores = tf.placeholder(tf.float32, [None, None, None], name="local_scores")
 
             # slice candidate entities of mask index
-            # shape = [batch_size, max number of cand entitites]
+            # shape = [batch_size, #cand_entitites]
             self.mask_cand_entities = self.extract_axis_1(self.cand_entities, self.mask_index)
             self.mask_cand_entities_labels = self.extract_axis_1(self.cand_entities_labels, self.mask_index)
             self.mask_cand_entities_labels = tf.cast(self.mask_cand_entities_labels, tf.float32)
+            self.mask_cand_local_scores = self.extract_axis_1(self.cand_local_scores, self.mask_index)
             # shape = [batch_size]
             self.mask_cand_entities_len = self.extract_axis_1(self.cand_entities_len, self.mask_index)
             self.mask_begin_span = self.extract_axis_1(self.begin_span, self.mask_index)
             self.mask_end_span = self.extract_axis_1(self.end_span, self.mask_index)
 
-            # loss mask
-            self.loss_mask = tf.sequence_mask(self.mask_cand_entities_len, tf.shape(self.mask_cand_entities)[1], dtype=tf.float32)
-
-            # split entities for ground truth and local predictions
+            # split entities for ground truth
             # shape = [batch_size, word_length, 1/3]
             self.mask_entities = tf.string_split(tf.reshape(self.entities, [-1]), '_').values
             self.mask_entities = tf.reshape(self.mask_entities, [tf.shape(self.words)[0], tf.shape(self.words)[1], -1])
-            self.mask_entities = self.extract_axis_2(self.mask_entities, tf.zeros([tf.shape(self.words)[0]], dtype=tf.int64))
-            self.mask_entities = tf.reshape(self.mask_entities, [tf.shape(self.words)[0], tf.shape(self.words)[1], 1])
             self.mask_entities = tf.string_to_number(self.mask_entities, tf.int64)
 
-            # local prediction entities
-            # shape = [batch_size, 3]
-            self.mask_local_entities = tf.string_split(tf.reshape(self.local_entities, [-1]), "_").values
-            self.mask_local_entities = tf.reshape(self.mask_local_entities, [tf.shape(self.words)[0], -1])
-            self.mask_local_entities = self.extract_axis_1(self.mask_local_entities, tf.zeros([tf.shape(self.words)[0]], dtype=tf.int64))
-            self.mask_local_entities = tf.reshape(self.mask_local_entities, [tf.shape(self.words)[0], 1])
-            self.mask_local_entities = tf.string_to_number(self.mask_local_entities, tf.int64)
+            # loss mask
+            self.loss_mask = tf.sequence_mask(self.mask_cand_entities_len, tf.shape(self.mask_cand_entities)[1], dtype=tf.float32)
 
         with tf.variable_scope("next_example"):
             self.next_data = next_element
@@ -101,16 +73,12 @@ class Model(BaseModel):
     def init_embeddings(self):
         print("\n!!!! init embeddings !!!!\n")
         # read the numpy file
-        embeddings_nparray = np.load(config.base_folder + "data/tfrecords/" +
-                                     self.args.experiment_name + "/embeddings_array.npy")
+        embeddings_nparray = np.load(config.base_folder + "data/tfrecords/" + self.args.experiment_name + "/embeddings_array.npy")
         entity_embeddings_nparray = util.load_ent_vecs(self.args)
 
         with tf.variable_scope("init_embeddings"):
-            self.sess.run(self.word_embedding_init,
-                          feed_dict={self.word_embeddings_placeholder: embeddings_nparray})
-
-            self.sess.run(self.entity_embedding_init,
-                          feed_dict={self.entity_embeddings_placeholder: entity_embeddings_nparray})
+            self.sess.run(self.word_embedding_init, feed_dict={self.word_embeddings_placeholder: embeddings_nparray})
+            self.sess.run(self.entity_embedding_init, feed_dict={self.entity_embeddings_placeholder: entity_embeddings_nparray})
 
     def add_embeddings_op(self):
         with open(config.base_folder + "data/tfrecords/" + self.args.experiment_name + "/word_char_maps.pickle", 'rb') as handle:
@@ -141,9 +109,9 @@ class Model(BaseModel):
             # input entity
             entity_embeddings = tf.nn.embedding_lookup(_new_entity_embeddings, self.mask_entities, name="entity_embeddings")
             entity_embeddings = tf.reduce_mean(entity_embeddings, axis=-2)
-
-            local_entity_embeddings = tf.nn.embedding_lookup(_new_entity_embeddings, self.mask_local_entities, name="local_entity_embeddings")
-            self.local_entity_embeddings = tf.reduce_mean(local_entity_embeddings, axis=-2)
+            # global entity
+            global_entity_embeddings = tf.reduce_sum(entity_embeddings, axis=-2)
+            self.global_entity_embeddings = tf.nn.l2_normalize(global_entity_embeddings, dim=-1)
 
         """Defines self.word_embeddings"""
         with tf.variable_scope("word_embeddings"):
@@ -179,20 +147,23 @@ class Model(BaseModel):
                 mention_emb_list.append(mention_end_emb)
             # shape = [batch_size, 300]
             self.span_emb = tf.layers.dense(tf.concat(mention_emb_list, -1), 300)
-            self.span_emb = tf.nn.l2_normalize(self.span_emb, dim=-1)
 
     def add_final_score_op(self):
         with tf.variable_scope("final_score"):
-            if not self.args.use_local:
-                pred_entity_emb = self.span_emb
-            else:
-                pred_entity_emb = tf.layers.dense(tf.concat([self.span_emb, self.local_entity_embeddings], axis=-1), 300)
-                pred_entity_emb = tf.nn.l2_normalize(pred_entity_emb, dim=-1)
+            # context-aware global scores => [batch_size, #cands, 300] * [batch_size, 1, 300] = [batch_size, #cands, 1]
+            global_context_scores = tf.matmul(self.cand_entity_embeddings, tf.expand_dims(self.span_emb, 1), transpose_b=True)
 
-            # [batch_size, 1, 300] * [batch_size, #cands, 300]
-            scores = tf.matmul(tf.expand_dims(pred_entity_emb, 1), self.cand_entity_embeddings, transpose_b=True)
-            # [batch_size, #cands]
-            self.final_scores = tf.squeeze(scores, axis=1)
+            # local scores => [batch_size, #cands, 1]
+            local_scores = tf.reshape(self.cand_local_scores, [-1, -1, 1])
+
+            # global voting sores => [batch_size, #cands, 1]
+            global_voting_scores = tf.matmul(self.cand_entity_embeddings, tf.expand_dims(self.global_entity_embeddings, 1), transpose_b=True)
+
+            if not self.args.use_local:
+                final_scores = tf.layers.dense(tf.concat([global_context_scores, global_voting_scores], axis=-1), 1)
+            else:
+                final_scores = tf.layers.dense(tf.concat([local_scores, global_context_scores, global_voting_scores], axis=-1), 1)
+            self.final_scores = tf.squeeze(final_scores, axis=-1)
 
     def add_loss_op(self):
         with tf.variable_scope("loss"):

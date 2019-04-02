@@ -2,7 +2,7 @@ for v in 1
 do
 python3 -m global_model.train \
         --batch_size=16 --experiment_name=corefmerge \
-        --training_name=group_global/local_global_emb_trans_1_3_model_v$v \
+        --training_name=group_global/local_global_trans_1_3_model_v$v \
         --evaluation_minutes=10 --nepoch_no_imprv=6 \
         --span_emb="boundaries" \
         --dropout=0.5 \

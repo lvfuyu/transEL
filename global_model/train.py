@@ -82,79 +82,6 @@ def optimal_thr_calc_aux(tp_fp_scores_labels, fn_scores):
     return best_thr, best_f1
 
 
-# def validation(model, dataset_handle):
-#     next_data = model.sess.run([model.next_data], feed_dict={model.input_handle_ph: dataset_handle})
-#     next_data = next_data[0]
-#     result_l = [next_data[9], next_data[11], next_data[8], next_data[5], next_data[6], next_data[7],
-#                 next_data[14], next_data[15], next_data[12], next_data[13], next_data[2], next_data[0]]
-#
-#     # batch_size = 1
-#     begin_span = np.array(next_data[5])
-#     end_span = np.array(next_data[6])
-#     span_len = next_data[7][0]
-#     entities = next_data[17]
-#     local_entities = np.copy(entities)
-#     default_mask = "502661_502661_502661"
-#
-#     for k in range(10):
-#         entities_tmp = np.copy(entities)
-#         flag = True
-#         for i in range(span_len):
-#             mask_index = np.array([i])
-#             mask_entities = np.copy(entities_tmp)
-#             for j in range(begin_span[0][i], end_span[0][i]):
-#                 mask_entities[0][j] = default_mask
-#
-#             pred_scores, cand_entities_len, cand_entities = \
-#                 model.sess.run([model.final_scores, model.mask_cand_entities_len, model.mask_cand_entities],
-#                                feed_dict={model.dropout: 1,
-#                                           model.chunk_id: next_data[0],
-#                                           model.words: next_data[1],
-#                                           model.words_len: next_data[2],
-#                                           model.chars: next_data[3],
-#                                           model.chars_len: next_data[4],
-#                                           model.begin_span: next_data[5],
-#                                           model.end_span: next_data[6],
-#                                           model.spans_len: next_data[7],
-#                                           model.cand_entities: next_data[8],
-#                                           model.cand_entities_scores: next_data[9],
-#                                           model.cand_entities_labels: next_data[10],
-#                                           model.cand_entities_len: next_data[11],
-#                                           model.ground_truth: next_data[12],
-#                                           model.ground_truth_len: next_data[13],
-#                                           model.begin_gm: next_data[14],
-#                                           model.end_gm: next_data[15],
-#                                           model.mask_index: mask_index,
-#                                           model.entities: mask_entities,
-#                                           model.local_entities: np.array([local_entities[0][begin_span[0][i]]])})
-#             result_l[0][0][i] = pred_scores[0]
-#
-#             max_score = float('-inf')
-#             top_1_entity = -1
-#             for j in range(cand_entities_len[0]):
-#                 if max_score < pred_scores[0][j]:
-#                     top_1_entity = cand_entities[0][j]
-#                     max_score = pred_scores[0][j]
-#
-#             for j in range(begin_span[0][i], end_span[0][i]):
-#                 if str(entities[0][j]) != str(top_1_entity):
-#                     entities[0][j] = str(top_1_entity)
-#                     flag = False
-#
-#         if k == 9:
-#             print(next_data[0], "inference_iter:", k)
-#         if flag:
-#             break
-#
-#         if k == 0:
-#             default_mask = "502661"
-#             for i in range(len(entities[0])):
-#                 if entities[0][i] == b'502661_502661_502661':
-#                     entities[0][i] = default_mask
-#
-#     return result_l
-
-
 def validation(model, dataset_handle):
     next_data = model.sess.run([model.next_data], feed_dict={model.input_handle_ph: dataset_handle})
     next_data = next_data[0]
@@ -166,14 +93,16 @@ def validation(model, dataset_handle):
     end_span = np.array(next_data[6])
     span_len = next_data[7][0]
     entities = next_data[17]
-    local_entities = np.copy(entities)
+    default_mask = "502661_502661_502661"
 
-    for k in range(50):
+    for k in range(49):
         entities_tmp = np.copy(entities)
         flag = True
         for i in range(span_len):
             mask_index = np.array([i])
             mask_entities = np.copy(entities_tmp)
+            for j in range(begin_span[0][i], end_span[0][i]):
+                mask_entities[0][j] = default_mask
 
             pred_scores, cand_entities_len, cand_entities = \
                 model.sess.run([model.final_scores, model.mask_cand_entities_len, model.mask_cand_entities],
@@ -196,7 +125,7 @@ def validation(model, dataset_handle):
                                           model.end_gm: next_data[15],
                                           model.mask_index: mask_index,
                                           model.entities: mask_entities,
-                                          model.local_entities: np.array([local_entities[0][begin_span[0][i]]])})
+                                          model.cand_local_scores: next_data[18]})
             result_l[0][0][i] = pred_scores[0]
 
             max_score = float('-inf')
@@ -211,7 +140,7 @@ def validation(model, dataset_handle):
                     entities[0][j] = str(top_1_entity)
                     flag = False
 
-        if k > 9:
+        if k == 49:
             print(next_data[0], "inference_iter:", k)
         if flag:
             break
@@ -345,7 +274,7 @@ def train():
                                               model.end_gm: next_data[15],
                                               model.mask_index: next_data[16],
                                               model.entities: next_data[17],
-                                              model.local_entities: next_data[18]})
+                                              model.cand_local_scores: next_data[18]})
                 total_train_loss += loss
                 if train_step % 100 == 0:
                     print("train_step =", train_step, "train_loss =", loss, flush=True)

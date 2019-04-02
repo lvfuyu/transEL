@@ -146,3 +146,118 @@
 #     self.final_scores = tf.squeeze(self.final_scores, -1)
 # pred_entity_emb = tf.layers.dense(pred_entity_emb, 300, tf.nn.relu)
 # pred_entity_emb = tf.nn.dropout(pred_entity_emb, keep_prob=self.dropout)
+
+
+# def validation(model, dataset_handle):
+#     next_data = model.sess.run([model.next_data], feed_dict={model.input_handle_ph: dataset_handle})
+#     next_data = next_data[0]
+#     result_l = [next_data[9], next_data[11], next_data[8], next_data[5], next_data[6], next_data[7],
+#                 next_data[14], next_data[15], next_data[12], next_data[13], next_data[2], next_data[0]]
+#
+#     # batch_size = 1
+#     begin_span = np.array(next_data[5])
+#     end_span = np.array(next_data[6])
+#     span_len = next_data[7][0]
+#     entities = next_data[17]
+#     local_entities = np.copy(entities)
+#
+#     for k in range(50):
+#         entities_tmp = np.copy(entities)
+#         flag = True
+#         for i in range(span_len):
+#             mask_index = np.array([i])
+#             mask_entities = np.copy(entities_tmp)
+#
+#             pred_scores, cand_entities_len, cand_entities = \
+#                 model.sess.run([model.final_scores, model.mask_cand_entities_len, model.mask_cand_entities],
+#                                feed_dict={model.dropout: 1,
+#                                           model.chunk_id: next_data[0],
+#                                           model.words: next_data[1],
+#                                           model.words_len: next_data[2],
+#                                           model.chars: next_data[3],
+#                                           model.chars_len: next_data[4],
+#                                           model.begin_span: next_data[5],
+#                                           model.end_span: next_data[6],
+#                                           model.spans_len: next_data[7],
+#                                           model.cand_entities: next_data[8],
+#                                           model.cand_entities_scores: next_data[9],
+#                                           model.cand_entities_labels: next_data[10],
+#                                           model.cand_entities_len: next_data[11],
+#                                           model.ground_truth: next_data[12],
+#                                           model.ground_truth_len: next_data[13],
+#                                           model.begin_gm: next_data[14],
+#                                           model.end_gm: next_data[15],
+#                                           model.mask_index: mask_index,
+#                                           model.entities: mask_entities,
+#                                           model.local_entities: np.array([local_entities[0][begin_span[0][i]]])})
+#             result_l[0][0][i] = pred_scores[0]
+#
+#             max_score = float('-inf')
+#             top_1_entity = -1
+#             for j in range(cand_entities_len[0]):
+#                 if max_score < pred_scores[0][j]:
+#                     top_1_entity = cand_entities[0][j]
+#                     max_score = pred_scores[0][j]
+#
+#             for j in range(begin_span[0][i], end_span[0][i]):
+#                 if str(entities[0][j]) != str(top_1_entity):
+#                     entities[0][j] = str(top_1_entity)
+#                     flag = False
+#
+#         if k == 49:
+#             print(next_data[0], "inference_iter:", k)
+#         if flag:
+#             break
+#
+#         if k == 0:
+#             default_mask = "502661"
+#             for i in range(len(entities[0])):
+#                 if entities[0][i] == b'502661_502661_502661':
+#                     entities[0][i] = default_mask
+#
+#     return result_l
+
+# context["mask_ent_id"]]
+
+# "502661_502661_502661"
+
+# self.local_entities = tf.placeholder(tf.string, [None], name="local_entities")
+"""
+self.words:  tf.int64, shape=[None, None]  # shape = (batch size, max length of sentence in batch)
+self.words_len: tf.int64, shape=[None],  # shape = (batch size)
+self.chars: tf.int64, shape=[None, None, None],  # shape = (batch size, max length of sentence, max length of word)
+self.chars_len: tf.int64, shape=[None, None],  # shape = (batch_size, max_length of sentence)
+self.begin_span: tf.int64, shape=[None, None],  # shape = (batch_size, max number of candidate spans in one of the batch sentences)
+self.end_span: tf.int64, shape=[None, None],
+self.spans_len: tf.int64, shape=[None],  # shape = (batch size)
+self.cand_entities: tf.int64, shape=[None, None, None],  # shape = (batch size, max number of candidate spans, max number of cand entitites)
+self.cand_entities_scores: tf.float32, shape=[None, None, None],
+self.cand_entities_labels: tf.int64, shape=[None, None, None], 
+self.cand_entities_len: tf.int64, shape=[None, None],  # shape = (batch_size, max number of candidate spans)
+self.ground_truth: tf.int64, shape=[None, None],  # shape = (batch_size, max number of candidate spans)
+self.ground_truth_len: tf.int64, shape=[None],  # shape = (batch_size)
+self.begin_gm: tf.int64, shape=[None, None],  # shape = (batch_size, max number of gold mentions)
+self.end_gm = tf.int64, shape=[None, None],
+self.mask_index = tf.int64 shape=[None]  # shape = (batch_size)
+"""
+
+# shape = [batch_size, 3]
+# self.mask_local_entities = tf.string_split(tf.reshape(self.local_entities, [-1]), "_").values
+# self.mask_local_entities = tf.reshape(self.mask_local_entities, [tf.shape(self.words)[0], -1])
+# self.mask_local_entities = self.extract_axis_1(self.mask_local_entities, tf.zeros([tf.shape(self.words)[0]], dtype=tf.int64))
+# self.mask_local_entities = tf.reshape(self.mask_local_entities, [tf.shape(self.words)[0], 1])
+# self.mask_local_entities = tf.string_to_number(self.mask_local_entities, tf.int64)
+
+# self.mask_entities = self.extract_axis_2(self.mask_entities, tf.zeros([tf.shape(self.words)[0]], dtype=tf.int64))
+# self.mask_entities = tf.reshape(self.mask_entities, [tf.shape(self.words)[0], tf.shape(self.words)[1], 1])
+# split entities for ground truth and local predictions
+
+# local prediction entities
+# tf.nn.embedding_lookup(_new_entity_embeddings, self.mask_local_entities, name="local_entity_embeddings")
+# self.local_entity_embeddings =
+
+# pred_entity_emb = tf.nn.l2_normalize(self.span_emb, dim=-1)
+
+# model.cand_local_scores: np.array([local_entities[0][begin_span[0][i]]])})
+
+# local_entities = np.copy(entities)
