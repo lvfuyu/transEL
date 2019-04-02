@@ -154,7 +154,7 @@ class Model(BaseModel):
             global_context_scores = tf.matmul(self.cand_entity_embeddings, tf.expand_dims(self.span_emb, 1), transpose_b=True)
 
             # local scores => [batch_size, #cands, 1]
-            local_scores = tf.expand_dims(self.cand_local_scores, 2)
+            local_scores = tf.expand_dims(self.mask_cand_local_scores, 2)
 
             # global voting sores => [batch_size, #cands, 1]
             global_voting_scores = tf.matmul(self.cand_entity_embeddings, tf.expand_dims(self.global_entity_embeddings, 1), transpose_b=True)
