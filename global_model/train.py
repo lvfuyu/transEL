@@ -104,8 +104,9 @@ def validation(model, dataset_handle):
             for j in range(begin_span[0][i], end_span[0][i]):
                 mask_entities[0][j] = default_mask
 
-            pred_scores, cand_entities_len, cand_entities = \
-                model.sess.run([model.final_scores, model.mask_cand_entities_len, model.mask_cand_entities],
+            pred_scores, local_scores, cand_entities_len, cand_entities = \
+                model.sess.run([model.final_scores, model.mask_cand_local_scores,
+                                model.mask_cand_entities_len, model.mask_cand_entities],
                                feed_dict={model.dropout: 1,
                                           model.chunk_id: next_data[0],
                                           model.words: next_data[1],
@@ -127,6 +128,8 @@ def validation(model, dataset_handle):
                                           model.entities: mask_entities,
                                           model.cand_local_scores: next_data[18]})
             result_l[0][0][i] = pred_scores[0]
+            if not args.use_local:
+                result_l[0][0][i] = 0.4*result_l[0][0][i] + 0.6*local_scores[0]
 
             max_score = float('-inf')
             top_1_entity = -1
