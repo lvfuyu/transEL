@@ -171,7 +171,8 @@ class Model(BaseModel):
             loss2 = (1 - self.mask_cand_entities_labels) * tf.nn.relu(self.final_scores)
             loss = loss1 + loss2
             loss = self.loss_mask * loss
-            self.loss = tf.reduce_sum(loss)
+            # self.loss = tf.reduce_sum(loss)
+            self.loss = tf.reduce_mean(loss)
 
     def build(self):
         self.add_embeddings_op()
