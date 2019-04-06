@@ -95,7 +95,7 @@ def validation(model, dataset_handle):
     entities = next_data[17]
     default_mask = "502661_502661_502661"
 
-    for k in range(49):
+    for k in range(1):
         entities_tmp = np.copy(entities)
         flag = True
         for i in range(span_len):
