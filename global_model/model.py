@@ -51,7 +51,7 @@ class Model(BaseModel):
             # split entities for ground truth
             # shape = [batch_size, word_length, 1/3]
             cond = tf.equal(self.entities, self.mask_ent_id)
-            self.entities = tf.where(cond, tf.constant("502661", shape=tf.shape(self.entities)), self.entities)
+            self.entities = tf.where(cond, tf.constant("502661", dtype=tf.string, shape=tf.shape(self.entities)), self.entities)
             self.mask_entities = tf.string_split(tf.reshape(self.entities, [-1]), '_').values
             self.mask_entities = tf.reshape(self.mask_entities, [tf.shape(self.words)[0], tf.shape(self.words)[1], -1])
             self.mask_entities = tf.string_to_number(self.mask_entities, tf.int64)
