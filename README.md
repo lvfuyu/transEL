@@ -47,9 +47,9 @@ training: enid_x ground truth string, x = "502661"
 
 testing: e1_e2_e3 local prediction top3 string
 ```
-[words:]            (President Obama)    and   his   wife  (Michelle) handed out (Halloween) treats to area children and military families at the (White  House  Sunday) evening
-[entities_words:]   (e1_e2_e3  e1_e2_e3) x_x_x x_x_x x_x_x (e4_e5_e6) ...
-[entities:]         [e1_e2_e3 e4_e5_e6 ...]
+[words:]            (President Obama) and   his   wife  (Michelle) handed out   (Halloween) treats to    area  children and   military families at    the   (White    House    Sunday)   evening
+[entities_words:]   (x_x_x     x_x_x) x_x_x x_x_x x_x_x (e1_e2_e3) x_x_x  x_x_x (e4_e5_e6)  x_x_x  x_x_x x_x_x x_x_x    x_x_x x_x_x    x_x_x    x_x_x x_x_x (e7_e8_e9 e7_e8_e9 e7_e8_e9) x_x_x
+[entities:]         [e1_e2_e3 e4_e5_e6 e7_e8_e9]
 [cand_local_scores:][[0.1 0.2 0.3 0.5] [0.1 0.2 0.3 0.5] ...]
 [mask_index:]       0
 [mask_ent_id:]      "502661"
