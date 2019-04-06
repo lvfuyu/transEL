@@ -6,6 +6,7 @@ def parse_sequence_example(serialized):
             "words": tf.FixedLenSequenceFeature([], dtype=tf.int64),
             "chars": tf.VarLenFeature(tf.int64),
             "chars_len": tf.FixedLenSequenceFeature([], dtype=tf.int64),
+            # "entities_words": tf.FixedLenSequenceFeature([], dtype=tf.string),  # entity ids per words
             "entities": tf.FixedLenSequenceFeature([], dtype=tf.string),  # entity ids
             "begin_span": tf.FixedLenSequenceFeature([], dtype=tf.int64),  # mention positions
             "end_span": tf.FixedLenSequenceFeature([], dtype=tf.int64),
@@ -24,7 +25,7 @@ def parse_sequence_example(serialized):
         "spans_len": tf.FixedLenFeature([], dtype=tf.int64),
         "ground_truth_len": tf.FixedLenFeature([], dtype=tf.int64),
         "mask_index": tf.FixedLenFeature([], dtype=tf.int64),
-        "mask_ent_id": tf.FixedLenFeature([], dtype=tf.string)
+        # "mask_ent_id": tf.FixedLenFeature([], dtype=tf.string)
     }
     context, sequence = tf.parse_single_sequence_example(
         serialized,

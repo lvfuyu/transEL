@@ -201,15 +201,24 @@ def compute_ed_el_scores(model, handles, names, iterators, el_mode):
     micro_results = [val_f1]
     macro_results = []
     test_datasets = args.ed_test_datasets
-    for i in test_datasets:
+    for i in test_datasets[0:2]:
         test_it = iterators[i]
         test_handle = handles[i]
         test_name = names[i]
-        micro_f1, macro_f1 = validation_loss_calculation(model, test_it, test_handle, opt_thr,
-                                                         el_mode=el_mode, name=test_name)
+        micro_f1, macro_f1 = validation_loss_calculation(model, test_it, test_handle, opt_thr, el_mode=el_mode, name=test_name)
         micro_results.append(micro_f1)
         macro_results.append(macro_f1)
-    return micro_results
+    return micro_results, opt_thr
+
+
+def compute_other_test_scores(model, handles, names, iterators, opt_thr):
+    test_datasets = args.ed_test_datasets
+    for i in test_datasets[2:]:
+        test_it = iterators[i]
+        test_handle = handles[i]
+        test_name = names[i]
+        validation_loss_calculation(model, test_it, test_handle, opt_thr, el_mode=False, name=test_name)
+        return
 
 
 def ed_el_dataset_handles(datasets, sess):
@@ -291,7 +300,7 @@ def train():
             comparison_ed_score = -0.1
             if ed_names:
                 print("Evaluating ED datasets")
-                ed_scores = compute_ed_el_scores(model, ed_handles, ed_names, ed_iterators, el_mode=False)
+                ed_scores, opt_thr = compute_ed_el_scores(model, ed_handles, ed_names, ed_iterators, el_mode=False)
                 comparison_ed_score = np.mean(np.array(ed_scores)[args.ed_val_datasets])
             print("Evaluation duration in minutes: ", (time.time() - wall_start) / 60)
 
@@ -316,6 +325,9 @@ def train():
                 print("significant improvement. reset termination counter")
                 termination_ed_score = comparison_ed_score
                 nepoch_no_imprv = 0
+                if args.eval_cnt > 5:
+                    print("Evaluating ED other test datasets")
+                    compute_other_test_scores(model, ed_handles, ed_names, ed_iterators, opt_thr)
             else:
                 nepoch_no_imprv += 1
                 if nepoch_no_imprv >= args.nepoch_no_imprv:

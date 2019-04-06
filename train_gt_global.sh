@@ -10,5 +10,5 @@ python3 -m global_model.train \
         --no_pre_training \
         --no_use_local \
         --train_datasets=aida_train \
-        --ed_datasets=aida_dev_z_aida_test --ed_val_datasets=0 --ed_test_datasets=0_1
+        --ed_datasets=aida_dev_z_aida_test_z_ace2004_z_aquaint_z_clueweb_z_msnbc_z_wikipedia --ed_val_datasets=0 --ed_test_datasets=0_1_2_3_4_5_6
 done
