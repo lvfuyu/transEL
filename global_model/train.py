@@ -126,7 +126,8 @@ def validation(model, dataset_handle):
                                           model.end_gm: next_data[15],
                                           model.mask_index: mask_index,
                                           model.entities: mask_entities,
-                                          model.cand_local_scores: next_data[18]})
+                                          model.cand_local_scores: next_data[18],
+                                          model.mask_ent_id: next_data[19]})
             result_l[0][0][i] = pred_scores[0]
             if not args.use_local:
                 result_l[0][0][i] = 0.4*result_l[0][0][i] + 0.6*local_scores[0]
@@ -286,7 +287,8 @@ def train():
                                               model.end_gm: next_data[15],
                                               model.mask_index: next_data[16],
                                               model.entities: next_data[17],
-                                              model.cand_local_scores: next_data[18]})
+                                              model.cand_local_scores: next_data[18],
+                                              model.mask_ent_id: next_data[19]})
                 total_train_loss += loss
                 if train_step % 100 == 0:
                     print("train_step =", train_step, "train_loss =", loss, flush=True)

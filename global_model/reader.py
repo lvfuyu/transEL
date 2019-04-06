@@ -25,7 +25,7 @@ def parse_sequence_example(serialized):
         "spans_len": tf.FixedLenFeature([], dtype=tf.int64),
         "ground_truth_len": tf.FixedLenFeature([], dtype=tf.int64),
         "mask_index": tf.FixedLenFeature([], dtype=tf.int64),
-        # "mask_ent_id": tf.FixedLenFeature([], dtype=tf.string)
+        "mask_ent_id": tf.FixedLenFeature([], dtype=tf.string)
     }
     context, sequence = tf.parse_single_sequence_example(
         serialized,
@@ -40,7 +40,8 @@ def parse_sequence_example(serialized):
            tf.sparse_tensor_to_dense(sequence["cand_entities_labels"]),
            sequence["cand_entities_len"], sequence["ground_truth"],
            context["ground_truth_len"], sequence["begin_gm"], sequence["end_gm"],
-           context["mask_index"], sequence["entities"], tf.sparse_tensor_to_dense(sequence["cand_local_scores"])]
+           context["mask_index"], sequence["entities"], tf.sparse_tensor_to_dense(sequence["cand_local_scores"]),
+           context["mask_ent_id"]]
 
     return ret
 
@@ -53,7 +54,7 @@ def train_input_pipeline(filenames, args):
                             tf.cast(0, tf.int64), tf.cast(0, tf.int64), tf.cast(0, tf.int64), tf.cast(0, tf.int64),
                             tf.cast(0, tf.float32), tf.cast(0, tf.int64), tf.cast(0, tf.int64), tf.cast(0, tf.int64),
                             tf.cast(0, tf.int64), tf.cast(0, tf.int64), tf.cast(0, tf.int64), tf.cast(0, tf.int64),
-                            padding_entity, tf.cast(0, tf.float32)])
+                            padding_entity, tf.cast(0, tf.float32), padding_entity])
     dataset = tf.data.TFRecordDataset(filenames)
     dataset = dataset.map(parse_sequence_example)
     dataset = dataset.repeat()
@@ -67,7 +68,7 @@ def test_input_pipeline(filenames, args):
                             tf.cast(0, tf.int64), tf.cast(0, tf.int64), tf.cast(0, tf.int64), tf.cast(0, tf.int64),
                             tf.cast(0, tf.float32), tf.cast(0, tf.int64), tf.cast(0, tf.int64), tf.cast(0, tf.int64),
                             tf.cast(0, tf.int64), tf.cast(0, tf.int64), tf.cast(0, tf.int64), tf.cast(0, tf.int64),
-                            "502661_502661_502661", tf.cast(0, tf.float32)])
+                            "502661_502661_502661", tf.cast(0, tf.float32), "502661_502661_502661"])
     dataset = tf.data.TFRecordDataset(filenames)
     dataset = dataset.map(parse_sequence_example)
     dataset = dataset.padded_batch(1, dataset.output_shapes, padding_values)
