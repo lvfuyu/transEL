@@ -34,6 +34,7 @@ class Model(BaseModel):
             self.end_gm = tf.placeholder(tf.int64, [None, None], name="end_gm")
             self.mask_index = tf.placeholder(tf.int64, [None], name="mask_index")
             self.entities = tf.placeholder(tf.string, [None, None], name="entities")
+            self.entities_only = tf.placeholder(tf.string, [None, None], name="entities_only")
             self.cand_local_scores = tf.placeholder(tf.float32, [None, None, None], name="local_scores")
             self.mask_ent_id = tf.placeholder(tf.string, [None], name="mask_ent_id")
 
@@ -130,7 +131,7 @@ class Model(BaseModel):
     def add_context_tr_emb_op(self):
         hparams = {"num_units": 300, "dropout": 1 - self.dropout, "is_training": True,
                    "num_multi_head": 1, "num_heads": 3, "max_seq_len": 10000}
-        with tf.variable_scope("context-bi-transformer"):
+        with tf.variable_scope("context-bi-transformer", reuse=tf.AUTO_REUSE):
             transformer = Transformer(hparams)
             output = transformer.encoder(self.word_embeddings, self.words_len)
             self.context_emb = output
@@ -149,6 +150,36 @@ class Model(BaseModel):
                 mention_emb_list.append(mention_end_emb)
             # shape = [batch_size, 300]
             self.span_emb = tf.layers.dense(tf.concat(mention_emb_list, -1), 300)
+
+    def add_context_tr_window(self):
+        hparams = {"num_units": 300, "dropout": 1 - self.dropout, "is_training": True,
+                   "num_multi_head": 1, "num_heads": 3, "max_seq_len": 10000}
+        with tf.variable_scope("context-bi-transformer", reuse=tf.AUTO_REUSE):
+            transformer = Transformer(hparams)
+
+            K = 10
+            # [batch, K]
+            left_indices = tf.maximum(0, tf.range(-1, -K - 1, -1) + tf.expand_dims(self.mask_begin_span, 1))
+            # [batch, K]
+            right_indices = tf.minimum(tf.shape(self.word_embeddings)[1] - 1, tf.range(K) + tf.expand_dims(self.mask_end_span, 1))
+            # [batch, 2*K]
+            ctxt_indices = tf.concat([left_indices, right_indices], -1)
+            batch_index = tf.tile(tf.expand_dims(tf.range(tf.shape(ctxt_indices)[0]), 1), [1, tf.shape(ctxt_indices)[1]])
+            ctxt_indices = tf.stack([batch_index, ctxt_indices], -1)
+
+
+            k = tf.minimum(tf.shape(self.words)[1], 10)
+            k_begin = tf.nn.relu(self.mask_begin_span - k)
+            k_indices = tf.range(2*k) + tf.expand_dims(k_begin, 1)
+
+            left_cnt = self.mask_begin_span - k_begin - (self.mask_begin_span - self.mask_end_span)
+            k_end = self.mask_end_span + (2 * k - left_cnt)
+
+            window_indices = tf.concat([k_begin, k_end], -1)
+            batch_index = tf.tile(tf.expand_dims(tf.range(tf.shape(window_indices)[0]), 1), [1, tf.shape(window_indices)[1]])
+            window_indices = tf.stack([batch_index, window_indices], -1)
+            window_word_embeddings = tf.gather_nd(self.word_embeddings, window_indices)
+            output = transformer.encoder(window_word_embeddings, tf.minimum(self.words_len, k_end) - k_begin)
 
     def add_final_score_op(self):
         with tf.variable_scope("final_score"):

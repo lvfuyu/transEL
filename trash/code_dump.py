@@ -261,3 +261,5 @@ self.mask_index = tf.int64 shape=[None]  # shape = (batch_size)
 # model.cand_local_scores: np.array([local_entities[0][begin_span[0][i]]])})
 
 # local_entities = np.copy(entities)
+
+# if args.pre_training:
