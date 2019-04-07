@@ -53,12 +53,12 @@ class Model(BaseModel):
             # shape = [batch_size, word_length, 1/3]
             self.entities = tf.where(tf.equal(self.entities, self.mask_ent_id), tf.fill(tf.shape(self.entities), "502661"), self.entities)
             self.mask_entities = tf.string_split(tf.reshape(self.entities, [-1]), '_').values
-            self.mask_entities = tf.reshape(self.mask_entities, [tf.shape(self.words)[0], tf.shape(self.words)[1], -1])
+            self.mask_entities = tf.reshape(self.mask_entities, [tf.shape(self.entities)[0], tf.shape(self.entities)[1], -1])
             self.mask_entities = tf.string_to_number(self.mask_entities, tf.int64)
 
             self.entities_only = tf.where(tf.equal(self.entities_only, self.mask_ent_id), tf.fill(tf.shape(self.entities_only), "502661"), self.entities_only)
             self.mask_entities_only = tf.string_split(tf.reshape(self.entities_only, [-1]), '_').values
-            self.mask_entities_only = tf.reshape(self.mask_entities_only, [tf.shape(self.ground_truth)[0], tf.shape(self.ground_truth)[1], -1])
+            self.mask_entities_only = tf.reshape(self.mask_entities_only, [tf.shape(self.entities_only)[0], tf.shape(self.entities_only)[1], -1])
             self.mask_entities_only = tf.string_to_number(self.mask_entities_only, tf.int64)
 
             # loss mask
