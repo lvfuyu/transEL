@@ -263,3 +263,45 @@ self.mask_index = tf.int64 shape=[None]  # shape = (batch_size)
 # local_entities = np.copy(entities)
 
 # if args.pre_training:
+
+# K = 10
+# # [batch, K]
+# left_indices = tf.maximum(0, tf.range(-1, -K - 1, -1) + tf.expand_dims(self.mask_begin_span, 1))
+# # [batch, K]
+# right_indices = tf.minimum(tf.shape(self.word_embeddings)[1] - 1, tf.range(K) + tf.expand_dims(self.mask_end_span, 1))
+# # [batch, 2*K]
+# ctxt_indices = tf.concat([left_indices, right_indices], -1)
+# batch_index = tf.tile(tf.expand_dims(tf.range(tf.shape(ctxt_indices)[0]), 1), [1, tf.shape(ctxt_indices)[1]])
+# ctxt_indices = tf.stack([batch_index, ctxt_indices], -1)
+
+# left_cnt = self.mask_begin_span - k_begin - (self.mask_begin_span - self.mask_end_span)
+# k_end = self.mask_end_span + (2 * k - left_cnt)
+# batch_index = tf.tile(tf.expand_dims(tf.range(tf.shape(window_indices)[0]), 1), [1, tf.shape(window_indices)[1]])
+# window_indices = tf.stack([batch_index, window_indices], -1)
+
+
+# max_score = float('-inf')
+# top_1_entity = -1
+# for j in range(cand_entities_len[0]):
+#     if max_score < pred_scores[0][j]:
+#         top_1_entity = cand_entities[0][j]
+#         max_score = pred_scores[0][j]
+#
+# for j in range(begin_span[0][i], end_span[0][i]):
+#     if str(entities[0][j]) != str(top_1_entity):
+#         entities[0][j] = str(top_1_entity)
+#         flag = False
+
+# if k == 4:
+#     print(next_data[0], "inference_iter:", k)
+# if flag:
+#     break
+# if k == 0:
+#     default_mask = "502661"
+#     for i in range(len(entities[0])):
+#         if entities[0][i] == b'502661_502661_502661':
+#             entities[0][i] = default_mask
+
+# if not self.args.use_local:
+# else:
+# final_scores = tf.layers.dense(tf.concat([local_scores, global_context_scores, global_voting_scores], axis=-1), 1)
