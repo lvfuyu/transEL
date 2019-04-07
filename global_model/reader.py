@@ -41,7 +41,7 @@ def parse_sequence_example(serialized):
            sequence["cand_entities_len"], sequence["ground_truth"],
            context["ground_truth_len"], sequence["begin_gm"], sequence["end_gm"],
            context["mask_index"], sequence["entities_words"], tf.sparse_tensor_to_dense(sequence["cand_local_scores"]),
-           context["mask_ent_id"], context["entities"]]
+           context["mask_ent_id"], sequence["entities"]]
 
     return ret
 
