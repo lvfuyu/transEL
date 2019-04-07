@@ -56,6 +56,7 @@ class Model(BaseModel):
             self.mask_entities = tf.reshape(self.mask_entities, [tf.shape(self.words)[0], tf.shape(self.words)[1], -1])
             self.mask_entities = tf.string_to_number(self.mask_entities, tf.int64)
 
+            self.entities_only = tf.where(tf.equal(self.entities_only, self.mask_ent_id), tf.fill(tf.shape(self.entities_only), "502661"), self.entities_only)
             self.mask_entities_only = tf.string_split(tf.reshape(self.entities_only, [-1]), '_').values
             self.mask_entities_only = tf.reshape(self.mask_entities_only, [tf.shape(self.ground_truth)[0], tf.shape(self.ground_truth)[1], -1])
             self.mask_entities_only = tf.string_to_number(self.mask_entities_only, tf.int64)
@@ -201,9 +202,6 @@ class Model(BaseModel):
         with tf.variable_scope("final_score"):
             # context-aware global scores => [batch_size, #cands, 300] * [batch_size, 1, 300] = [batch_size, #cands, 1]
             global_context_scores = tf.matmul(self.cand_entity_embeddings, tf.expand_dims(self.span_emb, 1), transpose_b=True)
-
-            # local scores => [batch_size, #cands, 1]
-            local_scores = tf.expand_dims(self.mask_cand_local_scores, 2)
 
             # global voting sores => [batch_size, #cands, 1]
             global_voting_scores = tf.matmul(self.cand_entity_embeddings, tf.expand_dims(self.global_entity_embeddings, 1), transpose_b=True)

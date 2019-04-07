@@ -305,3 +305,6 @@ self.mask_index = tf.int64 shape=[None]  # shape = (batch_size)
 # if not self.args.use_local:
 # else:
 # final_scores = tf.layers.dense(tf.concat([local_scores, global_context_scores, global_voting_scores], axis=-1), 1)
+
+# local scores => [batch_size, #cands, 1]
+# local_scores = tf.expand_dims(self.mask_cand_local_scores, 2)
