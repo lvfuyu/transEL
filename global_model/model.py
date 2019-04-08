@@ -176,7 +176,7 @@ class Model(BaseModel):
                    "num_multi_head": 1, "num_heads": 3, "max_seq_len": 10000}
         with tf.variable_scope("context-bi-transformer", reuse=tf.AUTO_REUSE):
             transformer = Transformer(hparams)
-            window_word_embeddings, k_begin = self.slice_k(self.mask_begin_span, self.word_embeddings, 50)
+            window_word_embeddings, k_begin = self.slice_k(self.mask_begin_span, self.word_embeddings, tf.cast(50, dtype=tf.int64))
             output = transformer.encoder(window_word_embeddings, tf.minimum(self.words_len, k_begin + 2 * 50) - k_begin)
 
             mention_begin = self.mask_begin_span - k_begin
