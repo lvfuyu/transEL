@@ -316,3 +316,4 @@ self.mask_index = tf.int64 shape=[None]  # shape = (batch_size)
 # self.entities = tf.where(tf.equal(self.entities, self.mask_ent_id), tf.fill(tf.shape(self.entities), "502661"), self.entities)
 # self.entities_only = tf.where(tf.equal(self.entities_only, self.mask_ent_id), tf.fill(tf.shape(self.entities_only), "502661"), self.entities_only)
 # flag = True
+# with tf.device("/cpu:0"):
