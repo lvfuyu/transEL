@@ -161,7 +161,7 @@ class Model(BaseModel):
     def slice_k(self, mask_begin, embeddings, k):
         k = tf.minimum(tf.shape(embeddings)[1], k)
         # [batch]
-        k_begin = tf.nn.relu(mask_begin - k)
+        k_begin = tf.nn.relu(tf.cast(mask_begin, tf.int32) - k)
         # [2k] + [batch, 1] -> [batch, 2k]
         k_indices = tf.minimum(tf.shape(embeddings)[1] - 1, tf.range(2 * k) + tf.expand_dims(k_begin, 1))
         # [batch, 2k]
@@ -169,15 +169,15 @@ class Model(BaseModel):
         # [batch, 2k, 2]
         window_indices = tf.stack([batch_index, k_indices], 2)
         window_word_embeddings = tf.gather_nd(embeddings, window_indices)
-        return window_word_embeddings
+        return window_word_embeddings, tf.cast(k_begin, tf.int64)
 
     def add_context_tr_window(self):
         hparams = {"num_units": 300, "dropout": 1 - self.dropout, "is_training": True,
                    "num_multi_head": 1, "num_heads": 3, "max_seq_len": 10000}
         with tf.variable_scope("context-bi-transformer", reuse=tf.AUTO_REUSE):
             transformer = Transformer(hparams)
-            window_word_embeddings, k_begin = self.slice_k(self.mask_begin_span, self.word_embeddings, tf.cast(50, dtype=tf.int64))
-            output = transformer.encoder(window_word_embeddings, tf.minimum(self.words_len, k_begin + 2 * 50) - k_begin)
+            window_word_embeddings, k_begin = self.slice_k(self.mask_begin_span, self.word_embeddings, 50)
+            output = transformer.encoder(window_word_embeddings, tf.minimum(self.words_len, k_begin + tf.cast(2 * 50, tf.int64)) - k_begin)
 
             mention_begin = self.mask_begin_span - k_begin
             mention_end = self.mask_end_span - k_begin
