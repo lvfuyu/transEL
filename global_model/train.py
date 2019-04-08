@@ -12,8 +12,7 @@ from global_model.model import Model
 
 
 def create_training_pipelines(args):
-    folder = config.base_folder + "data/tfrecords/" + args.experiment_name + \
-             ("/gmonly_pre_mask/" if args.pre_training else "/gmonly_gt_mask/")
+    folder = config.base_folder + "data/tfrecords/" + args.experiment_name + "/gmonly_mask/"
     training_dataset = reader.train_input_pipeline([folder + file for file in args.train_datasets], args)
     return training_dataset
 
@@ -22,8 +21,7 @@ def create_el_ed_pipelines(filenames, args):
     if filenames is None:
         return [], []
 
-    folder = config.base_folder + "data/tfrecords/" + args.experiment_name + \
-             ("/gmonly_pre_mask/" if args.pre_training else "/gmonly_gt_mask/")
+    folder = config.base_folder + "data/tfrecords/" + args.experiment_name + "/gmonly_mask/"
     test_datasets = []
     for file in filenames:
         test_datasets.append(reader.test_input_pipeline([folder+file], args))
@@ -99,7 +97,6 @@ def validation(model, dataset_handle):
     for k in range(1):
         entities_tmp = np.copy(entities)
         entities_only_tmp = np.copy(entities_only)
-        # flag = True
         for i in range(span_len):
             mask_index = np.array([i])
             mask_entities = np.copy(entities_tmp)

@@ -309,6 +309,10 @@ self.mask_index = tf.int64 shape=[None]  # shape = (batch_size)
 # local scores => [batch_size, #cands, 1]
 # local_scores = tf.expand_dims(self.mask_cand_local_scores, 2)
 # self.loss = tf.reduce_mean(loss)
+
+# ("/gmonly_pre_mask/" if args.pre_training else
+# ("/gmonly_pre_mask/" if args.pre_training else
+
 # self.entities = tf.where(tf.equal(self.entities, self.mask_ent_id), tf.fill(tf.shape(self.entities), "502661"), self.entities)
 # self.entities_only = tf.where(tf.equal(self.entities_only, self.mask_ent_id), tf.fill(tf.shape(self.entities_only), "502661"), self.entities_only)
-
+# flag = True
