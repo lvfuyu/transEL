@@ -48,6 +48,8 @@ def parse_sequence_example(serialized):
 
 def train_input_pipeline(filenames, args):
     padding_entity = "502661"
+    if args.pre_training:
+        padding_entity = "502661_502661_502661"
     padding_values = tuple(["0", tf.cast(0, tf.int64), tf.cast(0, tf.int64), tf.cast(0, tf.int64), tf.cast(0, tf.int64),
                             tf.cast(0, tf.int64), tf.cast(0, tf.int64), tf.cast(0, tf.int64), tf.cast(0, tf.int64),
                             tf.cast(0, tf.float32), tf.cast(0, tf.int64), tf.cast(0, tf.int64), tf.cast(0, tf.int64),
