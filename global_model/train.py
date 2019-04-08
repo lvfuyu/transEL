@@ -106,7 +106,7 @@ def validation(model, dataset_handle):
             mask_entities_only = np.copy(entities_only_tmp)
             for j in range(begin_span[0][i], end_span[0][i]):
                 mask_entities[0][j] = default_mask
-            mask_entities_only[i] = default_mask
+            mask_entities_only[0][i] = default_mask
 
             pred_scores, local_scores, cand_entities_len, cand_entities = \
                 model.sess.run([model.final_scores, model.mask_cand_local_scores,
