@@ -198,7 +198,7 @@ def compute_other_test_scores(model, handles, names, iterators, opt_thr):
         test_handle = handles[i]
         test_name = names[i]
         validation_loss_calculation(model, test_it, test_handle, opt_thr, el_mode=False, name=test_name)
-        return
+    return
 
 
 def ed_el_dataset_handles(datasets, sess):
