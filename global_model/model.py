@@ -51,12 +51,10 @@ class Model(BaseModel):
 
             # split entities for ground truth
             # shape = [batch_size, word_length, 1/3]
-            self.entities = tf.where(tf.equal(self.entities, self.mask_ent_id), tf.fill(tf.shape(self.entities), "502661"), self.entities)
             self.mask_entities = tf.string_split(tf.reshape(self.entities, [-1]), '_').values
             self.mask_entities = tf.reshape(self.mask_entities, [tf.shape(self.entities)[0], tf.shape(self.entities)[1], -1])
             self.mask_entities = tf.string_to_number(self.mask_entities, tf.int64)
 
-            self.entities_only = tf.where(tf.equal(self.entities_only, self.mask_ent_id), tf.fill(tf.shape(self.entities_only), "502661"), self.entities_only)
             self.mask_entities_only = tf.string_split(tf.reshape(self.entities_only, [-1]), '_').values
             self.mask_entities_only = tf.reshape(self.mask_entities_only, [tf.shape(self.entities_only)[0], tf.shape(self.entities_only)[1], -1])
             self.mask_entities_only = tf.string_to_number(self.mask_entities_only, tf.int64)
@@ -215,8 +213,7 @@ class Model(BaseModel):
             loss2 = (1 - self.mask_cand_entities_labels) * tf.nn.relu(self.final_scores)
             loss = loss1 + loss2
             loss = self.loss_mask * loss
-            # self.loss = tf.reduce_sum(loss)
-            self.loss = tf.reduce_mean(loss)
+            self.loss = tf.reduce_sum(loss)
 
     def build(self):
         self.add_embeddings_op()
