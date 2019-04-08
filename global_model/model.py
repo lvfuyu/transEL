@@ -141,13 +141,11 @@ class Model(BaseModel):
         with tf.variable_scope("context-bi-transformer", reuse=tf.AUTO_REUSE):
             transformer = Transformer(hparams)
             output = transformer.encoder(self.word_embeddings, self.words_len)
-            self.context_emb = output
 
-    def add_span_emb_op(self):
         with tf.variable_scope("mask_span_embedding", reuse=tf.AUTO_REUSE):
             mention_emb_list = []
             # span embedding based on boundaries (start, end) and head mechanism.
-            boundaries_input_vecs = self.context_emb
+            boundaries_input_vecs = output
             # the span embedding is modeled by g^m = [x_q; x_r]
             if self.args.span_emb.find("boundaries") != -1:
                 # shape = [batch, emb]
@@ -201,14 +199,12 @@ class Model(BaseModel):
         with tf.variable_scope("final_score"):
             # context-aware global scores => [batch_size, #cands, 300] * [batch_size, 1, 300] = [batch_size, #cands, 1]
             global_context_scores = tf.matmul(self.cand_entity_embeddings, tf.expand_dims(self.span_emb, 1), transpose_b=True)
-
             # global voting sores => [batch_size, #cands, 1]
             global_voting_scores = tf.matmul(self.cand_entity_embeddings, tf.expand_dims(self.global_entity_embeddings, 1), transpose_b=True)
-
-            global_window_scores = tf.matmul(self.cand_entity_embeddings, tf.expand_dims(self.window_span_emb, 1), transpose_b=True)
-
+            global_window_context_scores = tf.matmul(self.cand_entity_embeddings, tf.expand_dims(self.window_span_emb, 1), transpose_b=True)
+            global_window_voting_scores = tf.matmul(self.cand_entity_embeddings, tf.expand_dims(self.window_entity_emb, 1), transpose_b=True)
             final_scores = tf.layers.dense(tf.concat([global_context_scores, global_voting_scores,
-                                                      global_window_scores], axis=-1), 1)
+                                                      global_window_context_scores, global_window_voting_scores], axis=-1), 1)
             self.final_scores = tf.squeeze(final_scores, axis=-1)
 
     def add_loss_op(self):
@@ -222,8 +218,8 @@ class Model(BaseModel):
     def build(self):
         self.add_embeddings_op()
         self.add_context_tr_emb_op()
-        self.add_span_emb_op()
         self.add_context_tr_window()
+        self.add_entity_tr_window()
         self.add_final_score_op()
         if self.args.running_mode.startswith("train"):
             self.add_loss_op()
