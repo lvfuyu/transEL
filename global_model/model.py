@@ -181,7 +181,7 @@ class Model(BaseModel):
             mention_begin = self.mask_begin_span - k_begin
             mention_end = self.mask_end_span - k_begin
             mention_start_emb = self.extract_axis_1(output, mention_begin)
-            mention_end_emb = self.extract_axis_1(output, mention_end)
+            mention_end_emb = self.extract_axis_1(output, mention_end - 1)
             self.window_span_emb = tf.layers.dense(tf.concat([mention_start_emb, mention_end_emb], -1), 300)
 
     def add_entity_tr_window(self):
