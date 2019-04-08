@@ -188,7 +188,7 @@ class Model(BaseModel):
     def add_entity_tr_window(self):
         hparams = {"num_units": 300, "dropout": 1 - self.dropout, "is_training": True,
                    "num_multi_head": 1, "num_heads": 3, "max_seq_len": 10000}
-        with tf.variable_scope("entity-bi-transformer", reuse=tf.AUTO_REUSE):
+        with tf.variable_scope("entity-bi-transformer"):
             transformer = Transformer(hparams)
             window_entity_embeddings, k_begin = self.slice_k(self.mask_index, self.entity_only_embeddings, 3)
             output = transformer.encoder(window_entity_embeddings, tf.minimum(self.spans_len, k_begin + 2 * 3) - k_begin)
@@ -219,6 +219,7 @@ class Model(BaseModel):
         self.add_embeddings_op()
         self.add_context_tr_emb_op()
         self.add_span_emb_op()
+        self.add_context_tr_window()
         self.add_final_score_op()
         if self.args.running_mode.startswith("train"):
             self.add_loss_op()
