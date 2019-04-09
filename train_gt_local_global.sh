@@ -3,7 +3,7 @@ do
 python3 -m global_model.train \
         --batch_size=16 --experiment_name=corefmerge \
         --training_name=group_global/local_global_trans_model_v$v \
-        --evaluation_minutes=10 --nepoch_no_imprv=100 \
+        --evaluation_minutes=5 --nepoch_no_imprv=100 \
         --span_emb="boundaries" \
         --dropout=0.5 \
         --entity_extension=extension_entities \
