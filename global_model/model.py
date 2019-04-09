@@ -190,10 +190,11 @@ class Model(BaseModel):
         with tf.variable_scope("entity-bi-transformer"):
             transformer = Transformer(hparams)
             window_entity_embeddings, k_begin = self.slice_k(self.mask_index, self.entity_only_embeddings, 3)
+            window_entity_embeddings = tf.concat([window_entity_embeddings, tf.expand_dims(self.span_emb, 1)], axis=0)
             output = transformer.encoder(window_entity_embeddings, tf.minimum(self.spans_len, k_begin + tf.cast(2 * 3, tf.int64)) - k_begin)
-            # self.window_entity_emb = self.extract_axis_1(output, self.mask_index - k_begin)
-            window_entity_emb = tf.reduce_sum(output, axis=-2)
-            self.window_entity_emb = tf.nn.l2_normalize(window_entity_emb, dim=-1)
+            self.window_entity_emb = self.extract_axis_1(output, tf.cast(tf.shape(output)[1] - 1 + tf.zeros([tf.shape(output)[0]]), tf.int64))
+            # window_entity_emb = tf.reduce_sum(output, axis=-2)
+            # self.window_entity_emb = tf.nn.l2_normalize(window_entity_emb, dim=-1)
 
     def add_final_score_op(self):
         with tf.variable_scope("final_score"):
