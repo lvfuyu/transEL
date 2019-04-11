@@ -378,12 +378,6 @@ class Model(BaseModel):
                 self.final_scores = tf.squeeze(self.final_scores, axis=3)
                 #print("final_scores = ", self.final_scores)
 
-##--------------------------------------------------------------------------------------------------------------------##
-    def extract_axis_2(self, data, ind):
-        data_t = tf.transpose(data, [0, 2, 1])
-        res = self.extract_axis_1(data_t, ind)
-        return res
-
     def extract_axis_1(self, data, ind):
         batch_range = tf.range(tf.shape(data, out_type=tf.int64)[0], dtype=tf.int64)
         indices = tf.stack([batch_range, ind], axis=1)
@@ -392,32 +386,39 @@ class Model(BaseModel):
 
     def slice_k(self, mask_begin, embeddings, k):
         k = tf.minimum(tf.shape(embeddings)[1], k)
-        # [batch]
+        # [batch, #mentions]
         k_begin = tf.nn.relu(tf.cast(mask_begin, tf.int32) - k)
-        # [2k] + [batch, 1] -> [batch, 2k]
-        k_indices = tf.minimum(tf.shape(embeddings)[1] - 1, tf.range(2 * k) + tf.expand_dims(k_begin, 1))
-        # [batch, 2k]
-        batch_index = tf.tile(tf.expand_dims(tf.range(tf.shape(k_indices)[0]), 1), [1, tf.shape(k_indices)[1]])
-        # [batch, 2k, 2]
-        window_indices = tf.stack([batch_index, k_indices], 2)
+        # [2k] + [batch, #mentions, 1] -> [batch, #mentions, 2k]
+        k_indices = tf.minimum(tf.shape(embeddings)[1] - 1, tf.range(2 * k) + tf.expand_dims(k_begin, 2))
+        # [batch, #mentions, 2k]
+        batch_index = tf.tile(tf.expand_dims(tf.expand_dims(tf.range(tf.shape(k_indices)[0]), 1), 2),
+                              [1, tf.shape(k_indices)[1], tf.shape(k_indices)[2]])
+        # [batch, #mentions, 2k, 2]
+        window_indices = tf.stack([batch_index, k_indices], 3)
+        # [batch, #mentions, 2k, emb_size]
         window_word_embeddings = tf.gather_nd(embeddings, window_indices)
         return window_word_embeddings, tf.cast(k_begin, tf.int64)
     
     def add_context_tr_window(self):
-        hparams = {"num_units": 300, "dropout": 1 - self.dropout, "is_training": True,
-                   "num_multi_head": 1, "num_heads": 3, "max_seq_len": 10000}
+        hparams = {"num_units": 400, "dropout": 1 - self.dropout, "is_training": True,
+                   "num_multi_head": 1, "num_heads": 4, "max_seq_len": 10000}
         with tf.variable_scope("context-bi-transformer", reuse=tf.AUTO_REUSE):
             transformer = Transformer(hparams)
-            self.span_word_embeddings = tf.tile(self.word_embeddings, [1, self.begin_span.shape()[1], 1])
-            window_word_embeddings, k_begin = self.slice_k(self.begin_span, self.span_word_embeddings, 50)
-            output = transformer.encoder(window_word_embeddings, tf.minimum(self.words_len, k_begin + tf.cast(2 * 50, tf.int64)) - k_begin)
+            window_word_embeddings, k_begin = self.slice_k(self.begin_span, self.word_embeddings, 50)
+            batch_size, num_mention, width, embed_size = tf.shape(window_word_embeddings)
+            seq_len = tf.minimum(self.words_len, k_begin + tf.cast(2 * 50, tf.int64)) - k_begin
+            window_word_embeddings = tf.reshape(window_word_embeddings, [batch_size * num_mention, width, embed_size])
+            seq_len = tf.reshape(seq_len, [-1])
+            output = transformer.encoder(window_word_embeddings, seq_len)
 
-        with tf.variable_scope("mask_span_embedding", reuse=tf.AUTO_REUSE):
+        with tf.variable_scope("span_emb_ffnn", reuse=tf.AUTO_REUSE):
             mention_begin = self.begin_span - k_begin
             mention_end = self.end_span - k_begin
+            mention_begin = tf.reshape(mention_begin, [-1])
+            mention_end = tf.reshape(mention_end, [-1])
             mention_start_emb = self.extract_axis_1(output, mention_begin)
             mention_end_emb = self.extract_axis_1(output, mention_end - 1)
-            self.window_span_emb = tf.layers.dense(tf.concat([mention_start_emb, mention_end_emb], -1), 300)
+            self.window_span_emb = util.projection(tf.concat([mention_start_emb, mention_end_emb], -1), 300)
 
     def add_entity_tr_window(self):
         hparams = {"num_units": 300, "dropout": 1 - self.dropout, "is_training": True,
@@ -439,8 +440,6 @@ class Model(BaseModel):
         with tf.variable_scope("global_voting"):
             # for global score based on context
             # add_context_tr_window()
-
-             
             self.final_scores_before_global = - (1 - self.loss_mask) * 50 + self.final_scores
             gmask = tf.to_float(((self.final_scores_before_global - self.args.global_thr) >= 0))  # [b,s,30]
 
@@ -460,7 +459,7 @@ class Model(BaseModel):
             # [b,s,30,300] matmul [b,s,300,1] --> [b,s,30,1]-->[b,s,30]
 
             # for global score based on context entity
-            add_entity_tr_window()
+            self.add_entity_tr_window()
             self.global_ent_scores = tf.squeeze(tf.matmul(self.pure_entity_embeddings, tf.expand_dims(self.all_entity_emb, axis=3)), axis=3)
  
             scalar_predictors = tf.stack([self.final_scores_before_global, self.global_voting_scores, self.global_ent_scores], 4)
