@@ -6,7 +6,7 @@ import tensorflow as tf
 import model.config as config
 from .base_model import BaseModel
 import model.util as util
-from .transformer import Transformer 
+from .transformer import Transformer
 
 
 class Model(BaseModel):
@@ -157,7 +157,7 @@ class Model(BaseModel):
 
     def add_context_tr_emb_op(self):
         hparams = {"num_units": 400, "dropout": 1 - self.dropout, "is_training": True,
-                   "num_multi_head": 1, "num_heads": 4, "max_seq_len": 10000}
+                   "num_multi_head": 1, "num_heads": 4, "max_seq_len": 3000}
         with tf.variable_scope("context-bi-transformer"):
             transformer = Transformer(hparams)
             output = transformer.encoder(self.word_embeddings, self.words_len)
@@ -377,104 +377,6 @@ class Model(BaseModel):
                 # [batch, num_mentions, 30, 1] squeeze to [batch, num_mentions, 30]
                 self.final_scores = tf.squeeze(self.final_scores, axis=3)
                 #print("final_scores = ", self.final_scores)
-
-##--------------------------------------------------------------------------------------------------------------------##
-    def extract_axis_2(self, data, ind):
-        data_t = tf.transpose(data, [0, 2, 1])
-        res = self.extract_axis_1(data_t, ind)
-        return res
-
-    def extract_axis_1(self, data, ind):
-        batch_range = tf.range(tf.shape(data, out_type=tf.int64)[0], dtype=tf.int64)
-        indices = tf.stack([batch_range, ind], axis=1)
-        res = tf.gather_nd(data, indices)
-        return res
-
-    def slice_k(self, mask_begin, embeddings, k):
-        k = tf.minimum(tf.shape(embeddings)[1], k)
-        # [batch]
-        k_begin = tf.nn.relu(tf.cast(mask_begin, tf.int32) - k)
-        # [2k] + [batch, 1] -> [batch, 2k]
-        k_indices = tf.minimum(tf.shape(embeddings)[1] - 1, tf.range(2 * k) + tf.expand_dims(k_begin, 1))
-        # [batch, 2k]
-        batch_index = tf.tile(tf.expand_dims(tf.range(tf.shape(k_indices)[0]), 1), [1, tf.shape(k_indices)[1]])
-        # [batch, 2k, 2]
-        window_indices = tf.stack([batch_index, k_indices], 2)
-        window_word_embeddings = tf.gather_nd(embeddings, window_indices)
-        return window_word_embeddings, tf.cast(k_begin, tf.int64)
-    
-    def add_context_tr_window(self):
-        hparams = {"num_units": 300, "dropout": 1 - self.dropout, "is_training": True,
-                   "num_multi_head": 1, "num_heads": 3, "max_seq_len": 10000}
-        with tf.variable_scope("context-bi-transformer", reuse=tf.AUTO_REUSE):
-            transformer = Transformer(hparams)
-            self.span_word_embeddings = tf.tile(self.word_embeddings, [1, self.begin_span.shape()[1], 1])
-            window_word_embeddings, k_begin = self.slice_k(self.begin_span, self.span_word_embeddings, 50)
-            output = transformer.encoder(window_word_embeddings, tf.minimum(self.words_len, k_begin + tf.cast(2 * 50, tf.int64)) - k_begin)
-
-        with tf.variable_scope("mask_span_embedding", reuse=tf.AUTO_REUSE):
-            mention_begin = self.begin_span - k_begin
-            mention_end = self.end_span - k_begin
-            mention_start_emb = self.extract_axis_1(output, mention_begin)
-            mention_end_emb = self.extract_axis_1(output, mention_end - 1)
-            self.window_span_emb = tf.layers.dense(tf.concat([mention_start_emb, mention_end_emb], -1), 300)
-
-    def add_entity_tr_window(self):
-        hparams = {"num_units": 300, "dropout": 1 - self.dropout, "is_training": True,
-                   "num_multi_head": 1, "num_heads": 3, "max_seq_len": 20}
-        with tf.variable_scope("entity-bi-transformer"):
-            transformer = Transformer(hparams)
-            '''
-            window_entity_embeddings, k_begin = self.slice_k(self.mask_index, self.entity_only_embeddings, 3)
-            window_entity_embeddings = tf.concat([window_entity_embeddings, tf.expand_dims(self.span_emb, 1)], axis=1)
-            output = transformer.encoder(window_entity_embeddings, tf.minimum(self.spans_len, k_begin + tf.cast(2 * 3, tf.int64)) - k_begin)
-            self.window_entity_emb = self.extract_axis_1(output, tf.cast(tf.shape(output)[1] - 1, tf.int64) + tf.zeros([tf.shape(output)[0]], tf.int64))
-            # window_entity_emb = tf.reduce_sum(output, axis=-2)
-            # self.window_entity_emb = tf.nn.l2_normalize(window_entity_emb, dim=-1)
-            '''
-            output = transformer.encoder(self.span_voters_emb, self.spans_len)
-            self.all_entity_emb = tf.nn.l2_normalize(output, dim=-1)
-
-    def add_global_tr_voting_op(self):
-        with tf.variable_scope("global_voting"):
-            # for global score based on context
-            # add_context_tr_window()
-
-             
-            self.final_scores_before_global = - (1 - self.loss_mask) * 50 + self.final_scores
-            gmask = tf.to_float(((self.final_scores_before_global - self.args.global_thr) >= 0))  # [b,s,30]
-
-            masked_entity_emb = self.pure_entity_embeddings * tf.expand_dims(gmask, axis=3)  # [b,s,30,300] * [b,s,30,1]
-            batch_size = tf.shape(masked_entity_emb)[0]
-
-            # for original global method
-            all_voters_emb = tf.reduce_sum(tf.reshape(masked_entity_emb, [batch_size, -1, 300]), axis=1,
-                                           keep_dims=True)  # [b, 1, 300]
-            span_voters_emb = tf.reduce_sum(masked_entity_emb, axis=2)  # [batch, num_of_spans, 300]
-            valid_voters_emb = all_voters_emb - span_voters_emb
-            # [b, 1, 300] - [batch, spans, 300] = [batch, spans, 300]  (broadcasting)
-            # [300] - [batch, spans, 300]  = [batch, spans, 300]  (broadcasting)
-            valid_voters_emb = tf.nn.l2_normalize(valid_voters_emb, dim=2)
-
-            self.global_voting_scores = tf.squeeze(tf.matmul(self.pure_entity_embeddings, tf.expand_dims(valid_voters_emb, axis=3)), axis=3)
-            # [b,s,30,300] matmul [b,s,300,1] --> [b,s,30,1]-->[b,s,30]
-
-            # for global score based on context entity
-            add_entity_tr_window()
-            self.global_ent_scores = tf.squeeze(tf.matmul(self.pure_entity_embeddings, tf.expand_dims(self.all_entity_emb, axis=3)), axis=3)
- 
-            scalar_predictors = tf.stack([self.final_scores_before_global, self.global_voting_scores, self.global_ent_scores], 4)
-            #print("scalar_predictors = ", scalar_predictors)   #[b, s, 30, 2]
-            with tf.variable_scope("psi_and_global_ffnn"):
-                if self.args.global_score_ffnn[0] == 0:
-                    self.final_scores = util.projection(scalar_predictors, 1)
-                else:
-                    hidden_layers, hidden_size = self.args.global_score_ffnn[0], self.args.global_score_ffnn[1]
-                    self.final_scores = util.ffnn(scalar_predictors, hidden_layers, hidden_size, 1,
-                                                  self.dropout if self.args.ffnn_dropout else None)
-                # [batch, num_mentions, 30, 1] squeeze to [batch, num_mentions, 30]
-                self.final_scores = tf.squeeze(self.final_scores, axis=3)
-                #print("final_scores = ", self.final_scores) 
 
     def add_loss_op(self):
         cand_entities_labels = tf.cast(self.cand_entities_labels, tf.float32)
