@@ -384,7 +384,7 @@ class Model(BaseModel):
             window_word_embeddings, k_begin = self.slice_k(self.begin_span, self.word_embeddings, 50)
             _shape = tf.shape(window_word_embeddings)
             batch_size, num_mention, width, embed_size = _shape[0], _shape[1], _shape[2], _shape[3]
-            seq_len = tf.minimum(self.words_len, k_begin + 2 * 50) - k_begin
+            seq_len = tf.minimum(tf.expand_dims(self.words_len, 1), k_begin + 2 * 50) - k_begin
             window_word_embeddings = tf.reshape(window_word_embeddings, [batch_size * num_mention, width, embed_size])
             seq_len = tf.reshape(seq_len, [-1])
             output = transformer.encoder(window_word_embeddings, seq_len)
