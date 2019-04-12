@@ -398,7 +398,8 @@ class Model(BaseModel):
             mention_end_emb = self.extract_axis_1(output, mention_end - 1)
             mention_emb = tf.concat([mention_start_emb, mention_end_emb], -1)
             mention_emb = tf.reshape(mention_emb, [batch_size, num_mention, -1])
-            self.window_span_emb = util.projection(mention_emb, 300)
+            # self.window_span_emb = util.projection(mention_emb, 300)
+            self.window_span_emb = tf.layers.dense(mention_emb, 300)
 
     def add_entity_tr_window(self, span_voters_emb):
         hparams = {"num_units": 300, "dropout": 1 - self.dropout, "is_training": True,
