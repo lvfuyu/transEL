@@ -431,7 +431,7 @@ class Model(BaseModel):
             self.global_ent_scores = tf.squeeze(tf.matmul(self.pure_entity_embeddings, tf.expand_dims(self.all_entity_emb, axis=3)), axis=3)
             self.global_context_scores = tf.squeeze(tf.matmul(self.pure_entity_embeddings, tf.expand_dims(self.window_span_emb, axis=3)), axis=3)
  
-            scalar_predictors = tf.stack([self.final_scores_before_global, self.global_voting_scores, self.global_ent_scores, self.global_context_scores], 4)
+            scalar_predictors = tf.stack([self.final_scores_before_global, self.global_voting_scores, self.global_ent_scores, self.global_context_scores], 3)
             # print("scalar_predictors = ", scalar_predictors)   #[b, s, 30, 2]
             with tf.variable_scope("psi_and_global_ffnn"):
                 if self.args.global_score_ffnn[0] == 0:
