@@ -317,3 +317,45 @@ self.mask_index = tf.int64 shape=[None]  # shape = (batch_size)
 # self.entities_only = tf.where(tf.equal(self.entities_only, self.mask_ent_id), tf.fill(tf.shape(self.entities_only), "502661"), self.entities_only)
 # flag = True
 # with tf.device("/cpu:0"):
+
+# def add_global_voting_op(self):
+#     with tf.variable_scope("global_voting"):
+#         self.final_scores_before_global = - (1 - self.loss_mask) * 50 + self.final_scores
+#         gmask = tf.to_float(((self.final_scores_before_global - self.args.global_thr) >= 0))  # [b,s,30]
+#
+#         masked_entity_emb = self.pure_entity_embeddings * tf.expand_dims(gmask, axis=3)  # [b,s,30,300] * [b,s,30,1]
+#         batch_size = tf.shape(masked_entity_emb)[0]
+#         all_voters_emb = tf.reduce_sum(tf.reshape(masked_entity_emb, [batch_size, -1, 300]), axis=1,
+#                                        keep_dims=True)  # [b, 1, 300]
+#         span_voters_emb = tf.reduce_sum(masked_entity_emb, axis=2)  # [batch, num_of_spans, 300]
+#         valid_voters_emb = all_voters_emb - span_voters_emb
+#         # [b, 1, 300] - [batch, spans, 300] = [batch, spans, 300]  (broadcasting)
+#         # [300] - [batch, spans, 300]  = [batch, spans, 300]  (broadcasting)
+#         valid_voters_emb = tf.nn.l2_normalize(valid_voters_emb, dim=2)
+#
+#         self.global_voting_scores = tf.squeeze(
+#             tf.matmul(self.pure_entity_embeddings, tf.expand_dims(valid_voters_emb, axis=3)), axis=3)
+#         # [b,s,30,300] matmul [b,s,300,1] --> [b,s,30,1]-->[b,s,30]
+#
+#         scalar_predictors = tf.stack([self.final_scores_before_global, self.global_voting_scores], 3)
+#         # print("scalar_predictors = ", scalar_predictors)   #[b, s, 30, 2]
+#         with tf.variable_scope("psi_and_global_ffnn"):
+#             if self.args.global_score_ffnn[0] == 0:
+#                 self.final_scores = util.projection(scalar_predictors, 1)
+#             else:
+#                 hidden_layers, hidden_size = self.args.global_score_ffnn[0], self.args.global_score_ffnn[1]
+#                 self.final_scores = util.ffnn(scalar_predictors, hidden_layers, hidden_size, 1,
+#                                               self.dropout if self.args.ffnn_dropout else None)
+#             # [batch, num_mentions, 30, 1] squeeze to [batch, num_mentions, 30]
+#             self.final_scores = tf.squeeze(self.final_scores, axis=3)
+#             # print("final_scores = ", self.final_scores)
+
+
+'''
+window_entity_embeddings, k_begin = self.slice_k(self.mask_index, self.entity_only_embeddings, 3)
+window_entity_embeddings = tf.concat([window_entity_embeddings, tf.expand_dims(self.span_emb, 1)], axis=1)
+output = transformer.encoder(window_entity_embeddings, tf.minimum(self.spans_len, k_begin + tf.cast(2 * 3, tf.int64)) - k_begin)
+self.window_entity_emb = self.extract_axis_1(output, tf.cast(tf.shape(output)[1] - 1, tf.int64) + tf.zeros([tf.shape(output)[0]], tf.int64))
+# window_entity_emb = tf.reduce_sum(output, axis=-2)
+# self.window_entity_emb = tf.nn.l2_normalize(window_entity_emb, dim=-1)
+'''
