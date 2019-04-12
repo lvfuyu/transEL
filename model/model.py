@@ -381,10 +381,10 @@ class Model(BaseModel):
                    "num_multi_head": 1, "num_heads": 4, "max_seq_len": 10000}
         with tf.variable_scope("context-bi-transformer", reuse=tf.AUTO_REUSE):
             transformer = Transformer(hparams)
-            window_word_embeddings, k_begin = self.slice_k(self.begin_span, self.word_embeddings, 50)
+            window_word_embeddings, k_begin = self.slice_k(self.begin_span, self.word_embeddings, 20)
             _shape = tf.shape(window_word_embeddings)
             batch_size, num_mention, width, embed_size = _shape[0], _shape[1], _shape[2], _shape[3]
-            seq_len = tf.minimum(tf.expand_dims(self.words_len, 1), k_begin + 2 * 50) - k_begin
+            seq_len = tf.minimum(tf.expand_dims(self.words_len, 1), k_begin + 2 * 20) - k_begin
             window_word_embeddings = tf.reshape(window_word_embeddings, [batch_size * num_mention, width, embed_size])
             seq_len = tf.reshape(seq_len, [-1])
             output = transformer.encoder(window_word_embeddings, seq_len)
@@ -402,7 +402,7 @@ class Model(BaseModel):
 
     def add_entity_tr_window(self, span_voters_emb):
         hparams = {"num_units": 300, "dropout": 1 - self.dropout, "is_training": True,
-                   "num_multi_head": 1, "num_heads": 1, "max_seq_len": 100}
+                   "num_multi_head": 1, "num_heads": 3, "max_seq_len": 100}
         with tf.variable_scope("entity-bi-transformer"):
             transformer = Transformer(hparams)
             output = transformer.encoder(span_voters_emb, self.spans_len)
