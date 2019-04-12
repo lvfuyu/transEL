@@ -382,7 +382,8 @@ class Model(BaseModel):
         with tf.variable_scope("context-bi-transformer", reuse=tf.AUTO_REUSE):
             transformer = Transformer(hparams)
             window_word_embeddings, k_begin = self.slice_k(self.begin_span, self.word_embeddings, 50)
-            batch_size, num_mention, width, embed_size = tf.shape(window_word_embeddings)
+            _shape = tf.shape(window_word_embeddings)
+            batch_size, num_mention, width, embed_size = _shape[0], _shape[1], _shape[2], _shape[3]
             seq_len = tf.minimum(self.words_len, k_begin + tf.cast(2 * 50, tf.int64)) - k_begin
             window_word_embeddings = tf.reshape(window_word_embeddings, [batch_size * num_mention, width, embed_size])
             seq_len = tf.reshape(seq_len, [-1])
