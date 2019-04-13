@@ -7,7 +7,9 @@ from evaluation.metrics import Evaluator, metrics_calculation_and_prediction_pri
 import model.train as train
 from model.util import load_train_args
 import time
-
+import os
+os.environ["CUDA_DEVICE_ORDER"] = "PCI_BUS_ID"
+os.environ["CUDA_VISIBLE_DEVICES"] = "-1"
 
 def validation_loss_calculation(model, iterator, dataset_handle, opt_thr, el_mode, name=""):
     if args.print_predictions:
