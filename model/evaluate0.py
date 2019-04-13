@@ -221,8 +221,7 @@ if __name__ == "__main__":
     train_args.checkpoint_model_num = args.checkpoint_model_num
     train_args.entity_extension = args.entity_extension
     train.args = args
-    # args.batch_size = train_args.batch_size
-    args.batch_size = 1
+    args.batch_size = train_args.batch_size
     printPredictions = None
     if args.print_predictions:
         from evaluation.print_predictions import PrintPredictions
