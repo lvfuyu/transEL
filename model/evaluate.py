@@ -1,16 +1,14 @@
-import argparse
-import pickle
-import model.config as config
 import os
+os.environ["CUDA_DEVICE_ORDER"] = "PCI_BUS_ID"
+os.environ["CUDA_VISIBLE_DEVICES"] = "-1"
+import argparse
+import model.config as config
 import tensorflow as tf
 from model.model_ablations import Model
 from evaluation.metrics import Evaluator, metrics_calculation_and_prediction_printing
 import model.train as train
 from model.util import load_train_args
 import time
-import os
-os.environ["CUDA_DEVICE_ORDER"] = "PCI_BUS_ID"
-os.environ["CUDA_VISIBLE_DEVICES"] = "-1"
 
 
 def validation_loss_calculation(model, iterator, dataset_handle, opt_thr, el_mode, name=""):
