@@ -44,6 +44,7 @@ class Transformer:
 
     def learned_positional_encoding(self, inputs, max_length, num_units):
         outputs = tf.range(tf.shape(inputs)[1])  # (T_q)
+        outputs = tf.where(tf.greater_equal(outputs, max_length), tf.fill(tf.shape(outputs), max_length-1), outputs)
         outputs = tf.expand_dims(outputs, 0)     # (1, T_q)
         outputs = tf.tile(outputs, [tf.shape(inputs)[0], 1])  # (N, T_q)
         with tf.variable_scope("embeddings") as scope:
