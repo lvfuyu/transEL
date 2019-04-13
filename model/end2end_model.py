@@ -165,7 +165,7 @@ class Model(BaseModel):
 
     def add_context_tr_emb_op(self):
         hparams = {"num_units": 400, "dropout": 1 - self.dropout, "is_training": True,
-                   "num_multi_head": 1, "num_heads": 4, "max_seq_len": 10000}
+                   "num_multi_head": 1, "num_heads": 4, "max_seq_len": 10005}
         with tf.variable_scope("context-bi-transformer", reuse=tf.AUTO_REUSE):
             transformer = Transformer(hparams)
             output = transformer.encoder(self.word_embeddings, self.words_len)
@@ -410,7 +410,7 @@ class Model(BaseModel):
     
     def add_context_tr_window(self):
         hparams = {"num_units": 400, "dropout": 1 - self.dropout, "is_training": True,
-                   "num_multi_head": 1, "num_heads": 4, "max_seq_len": 10000}
+                   "num_multi_head": 1, "num_heads": 4, "max_seq_len": 10005}
         with tf.variable_scope("context-bi-transformer", reuse=tf.AUTO_REUSE):
             transformer = Transformer(hparams)
             window_word_embeddings, k_begin = self.slice_k(self.begin_span, self.word_embeddings, 20)
