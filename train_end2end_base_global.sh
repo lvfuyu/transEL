@@ -1,6 +1,6 @@
 python3 -m model.train0 \
     --batch_size=4   --experiment_name=corefmerge \
-    --training_name=group_global/global_trans_end2end_base_model_v1 \
+    --training_name=group_global/global_base_end2end_model_v1 \
     --ent_vecs_regularization=l2dropout  --evaluation_minutes=1 --nepoch_no_imprv=6 \
     --span_emb="boundaries"  \
     --dim_char=50 --hidden_size_char=50 --hidden_size_lstm=150 \
