@@ -520,7 +520,7 @@ class Model(BaseModel):
 
     def add_entity_tr_window(self, span_voters_emb):
         hparams = {"num_units": 300, "dropout": 1 - self.dropout, "is_training": True,
-                   "num_multi_head": 1, "num_heads": 3, "max_seq_len": 100}
+                   "num_multi_head": 1, "num_heads": 3, "max_seq_len": 200}
         with tf.variable_scope("entity-bi-transformer"):
             transformer = Transformer(hparams)
             output = transformer.encoder(span_voters_emb, self.spans_len)
