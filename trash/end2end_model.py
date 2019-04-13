@@ -1,10 +1,12 @@
+# b9d87f7  on Mar 21 Nikolaos Kolitsas ffnn dropout and some minor modif in evaluate to accept entity extension
+# ed_model_21_march
 import numpy as np
 import pickle
 import tensorflow as tf
 import model.config as config
-from .base_model import BaseModel
+from model.base_model import BaseModel
 import model.util as util
-from .transformer import Transformer 
+from model.transformer import Transformer
 
 
 class Model(BaseModel):
@@ -140,16 +142,6 @@ class Model(BaseModel):
                 self.entity_embeddings = tf.nn.dropout(self.entity_embeddings, self.dropout)
             #print("entity_embeddings = ", self.entity_embeddings)
 
-    def _sequence_mask_v13(self, mytensor, max_width):
-        """mytensor is a 2d tensor"""
-        if not tf.__version__.startswith("1.4"):
-            temp_shape = tf.shape(mytensor)
-            temp = tf.sequence_mask(tf.reshape(mytensor, [-1]), max_width, dtype=tf.float32)
-            temp_mask = tf.reshape(temp, [temp_shape[0], temp_shape[1], tf.shape(temp)[-1]])
-        else:
-            temp_mask = tf.sequence_mask(mytensor, max_width, dtype=tf.float32)
-        return temp_mask
-
     def add_context_emb_op(self):
         """this method creates the bidirectional LSTM layer (takes input the v_k vectors and outputs the
         context-aware word embeddings x_k)"""
@@ -166,7 +158,7 @@ class Model(BaseModel):
     def add_context_tr_emb_op(self):
         hparams = {"num_units": 400, "dropout": 1 - self.dropout, "is_training": True,
                    "num_multi_head": 1, "num_heads": 4, "max_seq_len": 10000}
-        with tf.variable_scope("context-bi-transformer", reuse=tf.AUTO_REUSE):
+        with tf.variable_scope("context-bi-transformer"):
             transformer = Transformer(hparams)
             output = transformer.encoder(self.word_embeddings, self.words_len)
             # self.context_emb = tf.nn.dropout(output, self.dropout)
@@ -246,7 +238,7 @@ class Model(BaseModel):
         #print("span_emb = ", self.span_emb)
 
     def add_lstm_score_op(self):
-        with tf.variable_scope("span_emb_ffnn", reuse=tf.AUTO_REUSE):
+        with tf.variable_scope("span_emb_ffnn"):
             # [batch, num_mentions, 300]
             # the span embedding can have different size depending on the chosen hyperparameters. We project it to 300
             # dims to match the entity embeddings  (formula 4)
@@ -370,101 +362,11 @@ class Model(BaseModel):
             # [300] - [batch, spans, 300]  = [batch, spans, 300]  (broadcasting)
             valid_voters_emb = tf.nn.l2_normalize(valid_voters_emb, dim=2)
 
-            self.global_voting_scores = tf.squeeze(
-                tf.matmul(self.pure_entity_embeddings, tf.expand_dims(valid_voters_emb, axis=3)), axis=3)
-            # [b,s,30,300] matmul [b,s,300,1] --> [b,s,30,1]-->[b,s,30]
-
-            scalar_predictors = tf.stack([self.final_scores_before_global, self.global_voting_scores], 3)
-            # print("scalar_predictors = ", scalar_predictors)   #[b, s, 30, 2]
-            with tf.variable_scope("psi_and_global_ffnn"):
-                if self.args.global_score_ffnn[0] == 0:
-                    self.final_scores = util.projection(scalar_predictors, 1)
-                else:
-                    hidden_layers, hidden_size = self.args.global_score_ffnn[0], self.args.global_score_ffnn[1]
-                    self.final_scores = util.ffnn(scalar_predictors, hidden_layers, hidden_size, 1,
-                                                  self.dropout if self.args.ffnn_dropout else None)
-                # [batch, num_mentions, 30, 1] squeeze to [batch, num_mentions, 30]
-                self.final_scores = tf.squeeze(self.final_scores, axis=3)
-                # print("final_scores = ", self.final_scores)
-
-    def extract_axis_1(self, data, ind):
-        batch_range = tf.range(tf.shape(data)[0])
-        indices = tf.stack([batch_range, ind], axis=1)
-        res = tf.gather_nd(data, indices)
-        return res
-
-    def slice_k(self, mask_begin, embeddings, k):
-        k = tf.minimum(tf.shape(embeddings)[1], k)
-        # [batch, #mentions]
-        k_begin = tf.nn.relu(tf.cast(mask_begin, tf.int32) - k)
-        # [2k] + [batch, #mentions, 1] -> [batch, #mentions, 2k]
-        k_indices = tf.minimum(tf.shape(embeddings)[1] - 1, tf.range(2 * k) + tf.expand_dims(k_begin, 2))
-        # [batch, #mentions, 2k]
-        batch_index = tf.tile(tf.expand_dims(tf.expand_dims(tf.range(tf.shape(k_indices)[0]), 1), 2),
-                              [1, tf.shape(k_indices)[1], tf.shape(k_indices)[2]])
-        # [batch, #mentions, 2k, 2]
-        window_indices = tf.stack([batch_index, k_indices], 3)
-        # [batch, #mentions, 2k, emb_size]
-        window_word_embeddings = tf.gather_nd(embeddings, window_indices)
-        return window_word_embeddings, k_begin
-    
-    def add_context_tr_window(self):
-        hparams = {"num_units": 400, "dropout": 1 - self.dropout, "is_training": True,
-                   "num_multi_head": 1, "num_heads": 4, "max_seq_len": 10000}
-        with tf.variable_scope("context-bi-transformer", reuse=tf.AUTO_REUSE):
-            transformer = Transformer(hparams)
-            window_word_embeddings, k_begin = self.slice_k(self.begin_span, self.word_embeddings, 20)
-            _shape = tf.shape(window_word_embeddings)
-            batch_size, num_mention, width, embed_size = _shape[0], _shape[1], _shape[2], _shape[3]
-            seq_len = tf.minimum(tf.expand_dims(self.words_len, 1), k_begin + 2 * 20) - k_begin
-            window_word_embeddings = tf.reshape(window_word_embeddings, [batch_size * num_mention, width, embed_size])
-            seq_len = tf.reshape(seq_len, [-1])
-            output = transformer.encoder(window_word_embeddings, seq_len)
-
-        with tf.variable_scope("span_emb_ffnn", reuse=tf.AUTO_REUSE):
-            mention_begin = self.begin_span - k_begin
-            mention_end = self.end_span - k_begin
-            mention_begin = tf.reshape(mention_begin, [-1])
-            mention_end = tf.reshape(mention_end, [-1])
-            mention_start_emb = self.extract_axis_1(output, mention_begin)
-            mention_end_emb = self.extract_axis_1(output, mention_end - 1)
-            mention_emb = tf.concat([mention_start_emb, mention_end_emb], -1)
-            mention_emb = tf.reshape(mention_emb, [batch_size, num_mention, 800])
-            self.window_span_emb = util.projection(mention_emb, 300)
-
-    def add_entity_tr_window(self, span_voters_emb):
-        hparams = {"num_units": 300, "dropout": 1 - self.dropout, "is_training": True,
-                   "num_multi_head": 1, "num_heads": 3, "max_seq_len": 100}
-        with tf.variable_scope("entity-bi-transformer"):
-            transformer = Transformer(hparams)
-            output = transformer.encoder(span_voters_emb, self.spans_len)
-            self.all_entity_emb = tf.nn.l2_normalize(output, dim=-1)
-
-    def add_global_tr_voting_op(self):
-        with tf.variable_scope("global_voting"):
-            self.final_scores_before_global = - (1 - self.loss_mask) * 50 + self.final_scores
-            gmask = tf.to_float(((self.final_scores_before_global - self.args.global_thr) >= 0))  # [b,s,30]
-            masked_entity_emb = self.pure_entity_embeddings * tf.expand_dims(gmask, axis=3)  # [b,s,30,300] * [b,s,30,1]
-            batch_size = tf.shape(masked_entity_emb)[0]
-            # for original global method
-            all_voters_emb = tf.reduce_sum(tf.reshape(masked_entity_emb, [batch_size, -1, 300]), axis=1, keep_dims=True) # [b, 1, 300]
-            span_voters_emb = tf.reduce_sum(masked_entity_emb, axis=2)  # [batch, num_of_spans, 300]
-            valid_voters_emb = all_voters_emb - span_voters_emb
-            # [b, 1, 300] - [batch, spans, 300] = [batch, spans, 300]  (broadcasting)
-            # [300] - [batch, spans, 300]  = [batch, spans, 300]  (broadcasting)
-            valid_voters_emb = tf.nn.l2_normalize(valid_voters_emb, dim=2)
             self.global_voting_scores = tf.squeeze(tf.matmul(self.pure_entity_embeddings, tf.expand_dims(valid_voters_emb, axis=3)), axis=3)
             # [b,s,30,300] matmul [b,s,300,1] --> [b,s,30,1]-->[b,s,30]
 
-            # for global score based on context entity
-            self.add_entity_tr_window(span_voters_emb)
-            # for global score based on context
-            self.add_context_tr_window()
-            self.global_ent_scores = tf.squeeze(tf.matmul(self.pure_entity_embeddings, tf.expand_dims(self.all_entity_emb, axis=3)), axis=3)
-            self.global_context_scores = tf.squeeze(tf.matmul(self.pure_entity_embeddings, tf.expand_dims(self.window_span_emb, axis=3)), axis=3)
- 
-            scalar_predictors = tf.stack([self.final_scores_before_global, self.global_voting_scores, self.global_ent_scores, self.global_context_scores], 3)
-            # print("scalar_predictors = ", scalar_predictors)   #[b, s, 30, 2]
+            scalar_predictors = tf.stack([self.final_scores_before_global, self.global_voting_scores], 3)
+            #print("scalar_predictors = ", scalar_predictors)   #[b, s, 30, 2]
             with tf.variable_scope("psi_and_global_ffnn"):
                 if self.args.global_score_ffnn[0] == 0:
                     self.final_scores = util.projection(scalar_predictors, 1)
@@ -474,7 +376,7 @@ class Model(BaseModel):
                                                   self.dropout if self.args.ffnn_dropout else None)
                 # [batch, num_mentions, 30, 1] squeeze to [batch, num_mentions, 30]
                 self.final_scores = tf.squeeze(self.final_scores, axis=3)
-                # print("final_scores = ", self.final_scores)
+                #print("final_scores = ", self.final_scores)
 
     def add_loss_op(self):
         cand_entities_labels = tf.cast(self.cand_entities_labels, tf.float32)
@@ -522,3 +424,13 @@ class Model(BaseModel):
         # if we run the evaluate.py script then we should call explicitly the model.restore("ed")
         # or model.restore("el"). here it doesn't initialize or restore values for the evaluate.py
         # case.
+
+    def _sequence_mask_v13(self, mytensor, max_width):
+        """mytensor is a 2d tensor"""
+        if not tf.__version__.startswith("1.4"):
+            temp_shape = tf.shape(mytensor)
+            temp = tf.sequence_mask(tf.reshape(mytensor, [-1]), max_width, dtype=tf.float32)
+            temp_mask = tf.reshape(temp, [temp_shape[0], temp_shape[1], tf.shape(temp)[-1]])
+        else:
+            temp_mask = tf.sequence_mask(mytensor, max_width, dtype=tf.float32)
+        return temp_mask
