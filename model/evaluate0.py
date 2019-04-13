@@ -1,5 +1,4 @@
 import argparse
-import pickle
 import model.config as config
 import os
 import tensorflow as tf
