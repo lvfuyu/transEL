@@ -395,7 +395,7 @@ class Model(BaseModel):
             mention_begin = tf.reshape(mention_begin, [-1])
             mention_end = tf.reshape(mention_end, [-1])
             mention_start_emb = self.extract_axis_1(output, mention_begin)
-            mention_end_emb = self.extract_axis_1(output, tf.nn.relu(mention_end - 1))
+            mention_end_emb = self.extract_axis_1(output, (mention_end - 1))  # tf.nn.relu
             mention_emb = tf.concat([mention_start_emb, mention_end_emb], -1)
             mention_emb = tf.reshape(mention_emb, [batch_size, num_mention, 800])
             self.window_span_emb = util.projection(mention_emb, 300)
