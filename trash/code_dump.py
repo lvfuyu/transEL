@@ -359,3 +359,5 @@ self.window_entity_emb = self.extract_axis_1(output, tf.cast(tf.shape(output)[1]
 # window_entity_emb = tf.reduce_sum(output, axis=-2)
 # self.window_entity_emb = tf.nn.l2_normalize(window_entity_emb, dim=-1)
 '''
+
+# outputs = tf.where(tf.greater_equal(outputs, max_length), tf.fill(tf.shape(outputs), max_length - 1), outputs)
