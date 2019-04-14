@@ -506,8 +506,8 @@ class Model(BaseModel):
             self.add_local_attention_op()
         self.add_cand_ent_scores_op()
         if self.args.nn_components.find("global") != -1:
-            self.add_global_voting_op()
-            # self.add_global_tr_voting_op()
+            # self.add_global_voting_op()
+            self.add_global_tr_voting_op()
         if self.args.running_mode.startswith("train"):
             self.add_loss_op()
             # Generic functions that add training op
