@@ -564,12 +564,12 @@ class Model(BaseModel):
 
     def add_loss_op(self):
         cand_entities_labels = tf.cast(self.cand_entities_labels, tf.float32)
-        loss1 = cand_entities_labels * tf.maximum(0, self.args.gamma_thr - self.final_scores)
-        loss2 = (1 - cand_entities_labels) * tf.maximum(0, self.final_scores)
+        loss1 = cand_entities_labels * tf.maximum(0.0, self.args.gamma_thr - self.final_scores)
+        loss2 = (1 - cand_entities_labels) * tf.maximum(0.0, self.final_scores)
         self.loss = loss1 + loss2
         if self.args.nn_components.find("global") != -1 and not self.args.global_one_loss:
-            loss3 = cand_entities_labels * tf.maximum(0, self.args.gamma_thr - self.final_scores_before_global)
-            loss4 = (1 - cand_entities_labels) * tf.maximum(0, self.final_scores_before_global)
+            loss3 = cand_entities_labels * tf.maximum(0.0, self.args.gamma_thr - self.final_scores_before_global)
+            loss4 = (1 - cand_entities_labels) * tf.maximum(0.0, self.final_scores_before_global)
             self.loss = loss1 + loss2 + loss3 + loss4
         #print("loss_mask = ", loss_mask)
         self.loss = self.loss_mask * self.loss
