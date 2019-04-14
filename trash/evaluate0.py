@@ -4,7 +4,7 @@ os.environ["CUDA_VISIBLE_DEVICES"] = "-1"
 import argparse
 import model.config as config
 import tensorflow as tf
-from model.end2end_model_ablations import Model
+from trash.end2end_model_ablations_1 import Model
 from evaluation.metrics import Evaluator, metrics_calculation_and_prediction_printing
 import model.train as train
 from model.util import load_train_args

@@ -170,7 +170,7 @@ def train():
     if args.ablations:
         from model.model_ablations import Model
     else:
-        from model.end2end_model import Model
+        from trash.end2end_model_1 import Model
     model = Model(args, next_element)
     model.build()
     model.input_handle_ph = input_handle_ph    # just for convenience so i can access it from everywhere

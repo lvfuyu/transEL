@@ -2,9 +2,9 @@ import numpy as np
 import pickle
 import tensorflow as tf
 import model.config as config
-from .base_model import BaseModel
+from model.base_model import BaseModel
 import model.util as util
-from .transformer import Transformer 
+from model.transformer import Transformer
 
 
 class Model(BaseModel):
