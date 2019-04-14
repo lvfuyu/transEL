@@ -482,7 +482,7 @@ class Model(BaseModel):
     def slice_k(self, mask_begin, embeddings, k):
         k = tf.minimum(tf.shape(embeddings)[1], k)
         # [batch, #mentions]
-        k_begin = tf.nn.relu(tf.cast(mask_begin, tf.int32) - k)
+        k_begin = tf.maximum(0, tf.cast(mask_begin, tf.int32) - k)
         # [2k] + [batch, #mentions, 1] -> [batch, #mentions, 2k]
         k_indices = tf.minimum(tf.shape(embeddings)[1] - 1, tf.range(2 * k) + tf.expand_dims(k_begin, 2))
         # [batch, #mentions, 2k]
@@ -513,7 +513,7 @@ class Model(BaseModel):
             mention_begin = tf.reshape(mention_begin, [-1])
             mention_end = tf.reshape(mention_end, [-1])
             mention_start_emb = self.extract_axis_1(output, mention_begin)
-            mention_end_emb = self.extract_axis_1(output, tf.nn.relu(mention_end - 1))
+            mention_end_emb = self.extract_axis_1(output, tf.maximum(0, mention_end - 1))
             mention_emb = tf.concat([mention_start_emb, mention_end_emb], -1)
             mention_emb = tf.reshape(mention_emb, [batch_size, num_mention, 800])
             self.window_span_emb = util.projection(mention_emb, 300)
