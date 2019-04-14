@@ -145,6 +145,16 @@ class Model(BaseModel):
                 self.entity_embeddings = tf.nn.dropout(self.entity_embeddings, self.dropout)
             #print("entity_embeddings = ", self.entity_embeddings)
 
+    def _sequence_mask_v13(self, mytensor, max_width):
+        """mytensor is a 2d tensor"""
+        if not tf.__version__.startswith("1.4"):
+            temp_shape = tf.shape(mytensor)
+            temp = tf.sequence_mask(tf.reshape(mytensor, [-1]), max_width, dtype=tf.float32)
+            temp_mask = tf.reshape(temp, [temp_shape[0], temp_shape[1], max_width]) # tf.shape(temp)[-1]])
+        else:
+            temp_mask = tf.sequence_mask(mytensor, max_width, dtype=tf.float32)
+        return temp_mask
+
     def add_context_emb_op(self):
         """this method creates the bidirectional LSTM layer (takes input the v_k vectors and outputs the
         context-aware word embeddings x_k)"""
@@ -592,8 +602,8 @@ class Model(BaseModel):
             self.add_local_attention_op()
         self.add_cand_ent_scores_op()
         if self.args.nn_components.find("global") != -1:
-            # self.add_global_voting_op()
-            self.add_global_tr_voting_op()
+            self.add_global_voting_op()
+            # self.add_global_tr_voting_op()
         if self.args.running_mode.startswith("train"):
             self.add_loss_op()
             # Generic functions that add training op
@@ -609,13 +619,3 @@ class Model(BaseModel):
         # if we run the evaluate.py script then we should call explicitly the model.restore("ed")
         # or model.restore("el"). here it doesn't initialize or restore values for the evaluate.py
         # case.
-
-    def _sequence_mask_v13(self, mytensor, max_width):
-        """mytensor is a 2d tensor"""
-        if not tf.__version__.startswith("1.4"):
-            temp_shape = tf.shape(mytensor)
-            temp = tf.sequence_mask(tf.reshape(mytensor, [-1]), max_width, dtype=tf.float32)
-            temp_mask = tf.reshape(temp, [temp_shape[0], temp_shape[1], max_width]) # tf.shape(temp)[-1]])
-        else:
-            temp_mask = tf.sequence_mask(mytensor, max_width, dtype=tf.float32)
-        return temp_mask

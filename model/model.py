@@ -355,6 +355,38 @@ class Model(BaseModel):
             self.final_scores = tf.squeeze(self.final_scores, axis=3)  # squeeze to [batch, num_mentions, 30]
             #print("final_scores = ", self.final_scores)
 
+    def add_global_voting_op(self):
+        with tf.variable_scope("global_voting"):
+            self.final_scores_before_global = - (1 - self.loss_mask) * 50 + self.final_scores
+            gmask = tf.to_float(((self.final_scores_before_global - self.args.global_thr) >= 0))  # [b,s,30]
+
+            masked_entity_emb = self.pure_entity_embeddings * tf.expand_dims(gmask, axis=3)  # [b,s,30,300] * [b,s,30,1]
+            batch_size = tf.shape(masked_entity_emb)[0]
+            all_voters_emb = tf.reduce_sum(tf.reshape(masked_entity_emb, [batch_size, -1, 300]), axis=1,
+                                           keep_dims=True)  # [b, 1, 300]
+            span_voters_emb = tf.reduce_sum(masked_entity_emb, axis=2)  # [batch, num_of_spans, 300]
+            valid_voters_emb = all_voters_emb - span_voters_emb
+            # [b, 1, 300] - [batch, spans, 300] = [batch, spans, 300]  (broadcasting)
+            # [300] - [batch, spans, 300]  = [batch, spans, 300]  (broadcasting)
+            valid_voters_emb = tf.nn.l2_normalize(valid_voters_emb, dim=2)
+
+            self.global_voting_scores = tf.squeeze(
+                tf.matmul(self.pure_entity_embeddings, tf.expand_dims(valid_voters_emb, axis=3)), axis=3)
+            # [b,s,30,300] matmul [b,s,300,1] --> [b,s,30,1]-->[b,s,30]
+
+            scalar_predictors = tf.stack([self.final_scores_before_global, self.global_voting_scores], 3)
+            # print("scalar_predictors = ", scalar_predictors)   #[b, s, 30, 2]
+            with tf.variable_scope("psi_and_global_ffnn"):
+                if self.args.global_score_ffnn[0] == 0:
+                    self.final_scores = util.projection(scalar_predictors, 1)
+                else:
+                    hidden_layers, hidden_size = self.args.global_score_ffnn[0], self.args.global_score_ffnn[1]
+                    self.final_scores = util.ffnn(scalar_predictors, hidden_layers, hidden_size, 1,
+                                                  self.dropout if self.args.ffnn_dropout else None)
+                # [batch, num_mentions, 30, 1] squeeze to [batch, num_mentions, 30]
+                self.final_scores = tf.squeeze(self.final_scores, axis=3)
+                # print("final_scores = ", self.final_scores)
+
     def extract_axis_1(self, data, ind):
         batch_range = tf.range(tf.shape(data)[0])
         indices = tf.stack([batch_range, ind], axis=1)
@@ -474,7 +506,8 @@ class Model(BaseModel):
             self.add_local_attention_op()
         self.add_cand_ent_scores_op()
         if self.args.nn_components.find("global") != -1:
-            self.add_global_tr_voting_op()
+            self.add_global_voting_op()
+            # self.add_global_tr_voting_op()
         if self.args.running_mode.startswith("train"):
             self.add_loss_op()
             # Generic functions that add training op
