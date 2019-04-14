@@ -193,7 +193,7 @@ class Model(BaseModel):
 
             mention_end_emb = tf.gather_nd(boundaries_input_vecs, tf.stack(
                 [tf.tile(tf.expand_dims(tf.range(tf.shape(self.begin_span)[0]), 1), [1, tf.shape(self.begin_span)[1]]),
-                 tf.nn.tf.maximum(0, self.end_span-1)], 2))   # -1 because the end of span in exclusive  [start, end)
+                 tf.maximum(0, self.end_span-1)], 2))   # -1 because the end of span in exclusive  [start, end)
             # relu so that the 0 doesn't become -1 of course no valid candidate span end index is zero since [0,0) is empty
             mention_emb_list.append(mention_end_emb)
             #print("mention_start_emb = ", mention_start_emb)
