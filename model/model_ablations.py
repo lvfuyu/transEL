@@ -160,7 +160,7 @@ class Model(BaseModel):
 
     def add_context_tr_emb_op(self):
         hparams = {"num_units": 400, "dropout": 1 - self.dropout, "is_training": True,
-                   "num_multi_head": 1, "num_heads": 4, "max_seq_len": 3000}
+                   "num_multi_head": 1, "num_heads": 4, "max_seq_len": 20000}
         with tf.variable_scope("context-bi-transformer", reuse=tf.AUTO_REUSE):
             transformer = Transformer(hparams)
             output = transformer.encoder(self.word_embeddings, self.words_len)
@@ -188,7 +188,7 @@ class Model(BaseModel):
 
             mention_end_emb = tf.gather_nd(boundaries_input_vecs, tf.stack(
                 [tf.tile(tf.expand_dims(tf.range(tf.shape(self.begin_span)[0]), 1), [1, tf.shape(self.begin_span)[1]]),
-                 tf.nn.relu(self.end_span-1)], 2))   # -1 because the end of span in exclusive  [start, end)
+                 tf.maximum(0, self.end_span-1)], 2))   # -1 because the end of span in exclusive  [start, end)
             # relu so that the 0 doesn't become -1 of course no valid candidate span end index is zero since [0,0) is empty
             mention_emb_list.append(mention_end_emb)
             #print("mention_start_emb = ", mention_start_emb)
@@ -496,7 +496,7 @@ class Model(BaseModel):
     
     def add_context_tr_window(self):
         hparams = {"num_units": 400, "dropout": 1 - self.dropout, "is_training": True,
-                   "num_multi_head": 1, "num_heads": 4, "max_seq_len": 3000}
+                   "num_multi_head": 1, "num_heads": 4, "max_seq_len": 20000}
         with tf.variable_scope("context-bi-transformer", reuse=tf.AUTO_REUSE):
             transformer = Transformer(hparams)
             window_word_embeddings, k_begin = self.slice_k(self.begin_span, self.word_embeddings, 20)
@@ -520,7 +520,7 @@ class Model(BaseModel):
 
     def add_entity_tr_window(self, span_voters_emb):
         hparams = {"num_units": 300, "dropout": 1 - self.dropout, "is_training": True,
-                   "num_multi_head": 1, "num_heads": 3, "max_seq_len": 300}
+                   "num_multi_head": 1, "num_heads": 3, "max_seq_len": 1000}
         with tf.variable_scope("entity-bi-transformer"):
             transformer = Transformer(hparams)
             output = transformer.encoder(span_voters_emb, self.spans_len)
@@ -564,12 +564,12 @@ class Model(BaseModel):
 
     def add_loss_op(self):
         cand_entities_labels = tf.cast(self.cand_entities_labels, tf.float32)
-        loss1 = cand_entities_labels * tf.nn.relu(self.args.gamma_thr - self.final_scores)
-        loss2 = (1 - cand_entities_labels) * tf.nn.relu(self.final_scores)
+        loss1 = cand_entities_labels * tf.maximum(0, self.args.gamma_thr - self.final_scores)
+        loss2 = (1 - cand_entities_labels) * tf.maximum(0, self.final_scores)
         self.loss = loss1 + loss2
         if self.args.nn_components.find("global") != -1 and not self.args.global_one_loss:
-            loss3 = cand_entities_labels * tf.nn.relu(self.args.gamma_thr - self.final_scores_before_global)
-            loss4 = (1 - cand_entities_labels) * tf.nn.relu(self.final_scores_before_global)
+            loss3 = cand_entities_labels * tf.maximum(0, self.args.gamma_thr - self.final_scores_before_global)
+            loss4 = (1 - cand_entities_labels) * tf.maximum(0, self.final_scores_before_global)
             self.loss = loss1 + loss2 + loss3 + loss4
         #print("loss_mask = ", loss_mask)
         self.loss = self.loss_mask * self.loss
