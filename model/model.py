@@ -411,12 +411,13 @@ class Model(BaseModel):
     def add_context_tr_window(self):
         hparams = {"num_units": 400, "dropout": 1 - self.dropout, "is_training": True,
                    "num_multi_head": 1, "num_heads": 4, "max_seq_len": 20000}
+        k = 20
         with tf.variable_scope("context-bi-transformer", reuse=tf.AUTO_REUSE):
             transformer = Transformer(hparams)
-            window_word_embeddings, k_begin = self.slice_k(self.begin_span, self.word_embeddings, 20)
+            window_word_embeddings, k_begin = self.slice_k(self.begin_span, self.word_embeddings, k)
             _shape = tf.shape(window_word_embeddings)
             batch_size, num_mention, width, embed_size = _shape[0], _shape[1], _shape[2], _shape[3]
-            seq_len = tf.minimum(tf.expand_dims(self.words_len, 1), k_begin + 2 * 20) - k_begin
+            seq_len = tf.minimum(tf.expand_dims(self.words_len, 1), k_begin + 2 * k) - k_begin
             window_word_embeddings = tf.reshape(window_word_embeddings, [batch_size * num_mention, width, embed_size])
             seq_len = tf.reshape(seq_len, [-1])
             output = transformer.encoder(window_word_embeddings, seq_len)
@@ -434,11 +435,22 @@ class Model(BaseModel):
 
     def add_entity_tr_window(self, span_voters_emb):
         hparams = {"num_units": 300, "dropout": 1 - self.dropout, "is_training": True,
-                   "num_multi_head": 1, "num_heads": 3, "max_seq_len": 1000}
+                   "num_multi_head": 1, "num_heads": 3, "max_seq_len": 10}
+        r = 3
         with tf.variable_scope("entity-bi-transformer"):
             transformer = Transformer(hparams)
-            output = transformer.encoder(span_voters_emb, self.spans_len)
-            self.all_entity_emb = tf.nn.l2_normalize(output, dim=-1)
+            begin_span = tf.range(tf.shape(span_voters_emb)[1])
+            begin_span = tf.tile(tf.expand_dims(begin_span, 0), [tf.shape(span_voters_emb)[0], 1])
+            window_entity_embeddings, k_begin = self.slice_k(begin_span, span_voters_emb, r)
+            _shape = tf.shape(window_entity_embeddings)
+            batch_size, num_mention, width, embed_size = _shape[0], _shape[1], _shape[2], _shape[3]
+            seq_len = tf.minimum(tf.expand_dims(self.spans_len, 1), k_begin + 2 * r) - k_begin
+            seq_len = tf.reshape(seq_len, [-1])
+            window_entity_embeddings = tf.reshape(window_entity_embeddings, [batch_size * num_mention, width, embed_size])
+            output = transformer.encoder(window_entity_embeddings, seq_len)
+            mention_begin = tf.reshape(begin_span - k_begin, [-1])
+            all_entity_emb = self.extract_axis_1(output, mention_begin)
+            self.all_entity_emb = tf.nn.l2_normalize(all_entity_emb, dim=-1)
 
     def add_global_tr_voting_op(self):
         self.add_context_tr_window()
