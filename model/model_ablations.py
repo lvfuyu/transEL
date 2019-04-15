@@ -537,6 +537,7 @@ class Model(BaseModel):
             self.all_entity_emb = tf.nn.l2_normalize(output, dim=-1)
 
     def add_global_tr_voting_op(self):
+        self.add_context_tr_window()
         with tf.variable_scope("global_voting"):
             self.final_scores_before_global = - (1 - self.loss_mask) * 50 + self.final_scores
             gmask = tf.to_float(((self.final_scores_before_global - self.args.global_thr) >= 0))  # [b,s,30]
@@ -555,7 +556,7 @@ class Model(BaseModel):
             # for global score based on context entity
             self.add_entity_tr_window(span_voters_emb)
             # for global score based on context
-            self.add_context_tr_window()
+
             self.global_ent_scores = tf.squeeze(tf.matmul(self.pure_entity_embeddings, tf.expand_dims(self.all_entity_emb, axis=3)), axis=3)
             self.global_context_scores = tf.squeeze(tf.matmul(self.pure_entity_embeddings, tf.expand_dims(self.window_span_emb, axis=3)), axis=3)
  
