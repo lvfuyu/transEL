@@ -20,6 +20,7 @@ class Model(BaseModel):
         self.begin_span = tf.cast(self.begin_span, tf.int32)
         self.end_span = tf.cast(self.end_span, tf.int32)
         self.words_len = tf.cast(self.words_len, tf.int32)
+        self.spans_len = tf.cast(self.spans_len, tf.int32)
         """
         self.words:  tf.int64, shape=[None, None]   # shape = (batch size, max length of sentence in batch)
         self.words_len: tf.int32, shape=[None],     #   shape = (batch size)
