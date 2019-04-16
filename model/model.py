@@ -468,18 +468,17 @@ class Model(BaseModel):
             # [b, 1, 300] - [batch, spans, 300] = [batch, spans, 300]  (broadcasting)
             # [300] - [batch, spans, 300]  = [batch, spans, 300]  (broadcasting)
             valid_voters_emb = tf.nn.l2_normalize(valid_voters_emb, dim=2)
+
             self.global_voting_scores = tf.squeeze(tf.matmul(self.pure_entity_embeddings, tf.expand_dims(valid_voters_emb, axis=3)), axis=3)
             # [b,s,30,300] matmul [b,s,300,1] --> [b,s,30,1]-->[b,s,30]
-
             # for global score based on context entity
             self.add_entity_tr_window(span_voters_emb)
             # for global score based on context
-
             self.global_ent_scores = tf.squeeze(tf.matmul(self.pure_entity_embeddings, tf.expand_dims(self.all_entity_emb, axis=3)), axis=3)
             self.global_context_scores = tf.squeeze(tf.matmul(self.pure_entity_embeddings, tf.expand_dims(self.window_span_emb, axis=3)), axis=3)
  
-            # scalar_predictors = tf.stack([self.final_scores_before_global, self.global_voting_scores, self.global_ent_scores, self.global_context_scores], 3)
-            scalar_predictors = tf.stack([self.final_scores_before_global, self.global_voting_scores, self.global_context_scores], 3)
+            scalar_predictors = tf.stack([self.final_scores_before_global, self.global_voting_scores, self.global_ent_scores, self.global_context_scores], 3)
+            # scalar_predictors = tf.stack([self.final_scores_before_global, self.global_voting_scores, self.global_context_scores], 3)
             # print("scalar_predictors = ", scalar_predictors)   #[b, s, 30, 2]
             with tf.variable_scope("psi_and_global_ffnn"):
                 if self.args.global_score_ffnn[0] == 0:
