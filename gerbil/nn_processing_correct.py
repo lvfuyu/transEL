@@ -1,5 +1,5 @@
 
-from model.model_ablations import Model
+from trash.model_ablations import Model
 from time import sleep
 import tensorflow as tf
 import pickle

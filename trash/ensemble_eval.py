@@ -1,9 +1,8 @@
 import argparse
-import pickle
 import model.config as config
 import os
 import tensorflow as tf
-from model.model_ablations import Model
+from trash.model_ablations import Model
 import model.train as train
 from evaluation.metrics import Evaluator, metrics_calculation_and_prediction_printing, threshold_calculation
 import model.reader as reader

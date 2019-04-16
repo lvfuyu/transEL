@@ -2,14 +2,15 @@ import argparse
 import model.reader as reader
 import model.config as config
 import os
-os.environ["CUDA_DEVICE_ORDER"] = "PCI_BUS_ID"
-os.environ["CUDA_VISIBLE_DEVICES"] = "-1"
+# os.environ["CUDA_DEVICE_ORDER"] = "PCI_BUS_ID"
+# os.environ["CUDA_VISIBLE_DEVICES"] = "-1"
 import tensorflow as tf
 from evaluation.metrics import Evaluator, metrics_calculation, threshold_calculation
 import time
 import pickle
 import numpy as np
 from model.util import load_train_args
+from model.model import Model
 
 
 def create_training_pipelines(args):
@@ -169,10 +170,6 @@ def train():
     next_element = iterator.get_next()
     #print(next_element)
 
-    if args.ablations:
-        from model.model_ablations import Model
-    else:
-        from model.model import Model
     model = Model(args, next_element)
     model.build()
     model.input_handle_ph = input_handle_ph    # just for convenience so i can access it from everywhere

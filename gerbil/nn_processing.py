@@ -1,5 +1,5 @@
 
-from model.model_ablations import Model
+from trash.model_ablations import Model
 from time import sleep
 import tensorflow as tf
 import pickle
@@ -7,9 +7,9 @@ from nltk.tokenize import word_tokenize
 import preprocessing.prepro_util as prepro_util
 from evaluation.metrics import _filtered_spans_and_gm_gt_list
 import numpy as np
-from preprocessing.util import load_wikiid2nnid, reverse_dict, load_wiki_name_id_map, FetchCandidateEntities, \
-    load_persons, FetchFilteredCoreferencedCandEntities
-import string
+from preprocessing.util import load_wikiid2nnid, reverse_dict, load_wiki_name_id_map, \
+    FetchFilteredCoreferencedCandEntities
+
 
 class StreamingSamples(object):
     def __init__(self):

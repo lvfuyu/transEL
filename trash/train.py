@@ -168,7 +168,7 @@ def train():
 	#print(next_element)
 
 	if args.ablations:
-		from model.model_ablations import Model
+		from trash.model_ablations import Model
 	else:
 		from model.model import Model
 	model = Model(args, next_element)
