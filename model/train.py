@@ -91,6 +91,7 @@ def optimal_thr_calc(model, handles, iterators, el_mode):
                 fn_scores.extend(fn_batch)
             except tf.errors.OutOfRangeError:
                 break
+    print(tp_fp_scores_labels)
     return optimal_thr_calc_aux(tp_fp_scores_labels, fn_scores)
 
 
