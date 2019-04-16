@@ -2,8 +2,8 @@ import argparse
 import model.reader as reader
 import model.config as config
 import os
-# os.environ["CUDA_DEVICE_ORDER"] = "PCI_BUS_ID"
-# os.environ["CUDA_VISIBLE_DEVICES"] = "-1"
+os.environ["CUDA_DEVICE_ORDER"] = "PCI_BUS_ID"
+os.environ["CUDA_VISIBLE_DEVICES"] = "-1"
 import tensorflow as tf
 from evaluation.metrics import Evaluator, metrics_calculation, threshold_calculation
 import time
