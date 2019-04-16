@@ -86,12 +86,12 @@ def optimal_thr_calc(model, handles, iterators, el_mode):
                               model.words_len, model.chunk_id]
                 result_l = model.sess.run(
                     retrieve_l, feed_dict={model.input_handle_ph: dataset_handle, model.dropout: 1})
+                print(result_l[0])
                 tp_fp_batch, fn_batch = threshold_calculation(*result_l, el_mode)
                 tp_fp_scores_labels.extend(tp_fp_batch)
                 fn_scores.extend(fn_batch)
             except tf.errors.OutOfRangeError:
                 break
-    print(tp_fp_scores_labels)
     return optimal_thr_calc_aux(tp_fp_scores_labels, fn_scores)
 
 
