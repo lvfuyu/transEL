@@ -86,7 +86,6 @@ def optimal_thr_calc(model, handles, iterators, el_mode):
                               model.words_len, model.chunk_id]
                 result_l = model.sess.run(
                     retrieve_l, feed_dict={model.input_handle_ph: dataset_handle, model.dropout: 1})
-                print(result_l[0])
                 tp_fp_batch, fn_batch = threshold_calculation(*result_l, el_mode)
                 tp_fp_scores_labels.extend(tp_fp_batch)
                 fn_scores.extend(fn_batch)
@@ -209,13 +208,15 @@ def train():
             total_train_loss = 0
             # for _ in range(args.steps_before_evaluation):          # for training based on training steps
             wall_start = time.time()
-            while ( (time.time() - wall_start) / 60 ) <= args.evaluation_minutes:
+            while ((time.time() - wall_start) / 60) <= args.evaluation_minutes:
                 train_step += 1
                 if args.ffnn_l2maxnorm:
                     sess.run(model.ffnn_l2normalization_op_list)
                 _, loss = sess.run([model.train_op, model.loss], feed_dict={input_handle_ph: training_handle, model.dropout: args.dropout,
                                                           model.lr: model.args.lr})
                 total_train_loss += loss
+                if train_step % 100 == 0:
+                    print("loss=", loss, flush=True)
 
             args.eval_cnt += 1
             summary = tf.Summary(value=[tf.Summary.Value(tag="total_train_loss", simple_value=total_train_loss)])
