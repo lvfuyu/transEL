@@ -451,6 +451,7 @@ class Model(BaseModel):
             output = transformer.encoder(window_entity_embeddings, seq_len)
             mention_begin = tf.reshape(begin_span - k_begin, [-1])
             all_entity_emb = self.extract_axis_1(output, mention_begin)
+            all_entity_emb = tf.reshape(all_entity_emb, [batch_size, num_mention, 300])
             self.all_entity_emb = tf.nn.l2_normalize(all_entity_emb, dim=-1)
 
     def add_global_tr_voting_op(self):
