@@ -1,7 +1,7 @@
 python3 -m model.train \
     --batch_size=4  --experiment_name=corefmerge \
     --training_name=group_global/global_trans_new_end2end_model_v1 \
-    --ent_vecs_regularization=l2dropout  --evaluation_minutes=10 --nepoch_no_imprv=6 \
+    --ent_vecs_regularization=l2dropout  --evaluation_minutes=1 --nepoch_no_imprv=6 \
     --span_emb="boundaries"  \
     --dim_char=50 --hidden_size_char=50 --hidden_size_lstm=150 \
     --nn_components=pem_trans_attention_global \
