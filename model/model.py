@@ -442,6 +442,7 @@ class Model(BaseModel):
             transformer = Transformer(hparams)
             begin_span = tf.range(tf.shape(span_voters_emb)[1])
             begin_span = tf.tile(tf.expand_dims(begin_span, 0), [tf.shape(span_voters_emb)[0], 1])
+            begin_span = tf.where(tf.greater_equal(begin_span, tf.expand_dims(self.spans_len, 1)), tf.zeros(tf.shape(begin_span)), begin_span)
             window_entity_embeddings, k_begin = self.slice_k(begin_span, span_voters_emb, r)
             _shape = tf.shape(window_entity_embeddings)
             batch_size, num_mention, width, embed_size = _shape[0], _shape[1], _shape[2], _shape[3]
